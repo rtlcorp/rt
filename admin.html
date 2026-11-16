@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+/* PHONE SIZE: on a phone set to Chrome's "Desktop site", the page is laid out 980 px wide and shrunk to fit, so everything looks tiny.
+   On a touch screen, when the page is laid out wider than the screen itself, zoom it back to the screen's own width (normal phones: no change). */
+(function () {
+  function fit() {
+    var touch = navigator.maxTouchPoints > 0 || (window.matchMedia && matchMedia("(pointer: coarse)").matches);
+    var sw = screen.width || 0, iw = window.innerWidth || 0;
+    var z = touch && sw > 0 && sw < 900 && iw > sw * 1.25 ? iw / sw : 1;
+    document.documentElement.style.zoom = z > 1 ? String(Math.round(z * 1000) / 1000) : "";
+  }
+  fit();
+  addEventListener("resize", fit);
+  addEventListener("orientationchange", function () { setTimeout(fit, 300); });
+})();
+</script>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0B2550">
+<title>RT Passbook Admin</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+/* VOICE: the lender's back office, direct and calm
+   IDEA: the passbook issuing desk: one counter, steps in order, stamps for each status
+   PICTURE: the alert counter and the people list
+   COLOUR and TYPE: RT navy and gold on paper, Arial
+   LAYOUT: one column up to 760px: password, Excel, sagot, alert, links, pipirmahan, save */
+:root{--navy:#0B2550;--gold:#B8873F;--gold2:#8C6424;--paper:#FFFDF8;--cream:#F6EFDF;--line:#E6DCC6;--ink:#1B2333;--muted:#5B6475;--green:#1E7B34;--red:#B42318;--amber:#9A4A00}
+*{box-sizing:border-box;min-width:0}
+html{background:#E9E2D2}
+body{margin:0;color:var(--ink);font:16px/1.5 Arial,"Helvetica Neue",Roboto,sans-serif;overflow-x:clip}
+.wrap{max-width:760px;margin:0 auto;background:var(--paper);min-height:100vh}
+header{background:var(--navy);color:#fff;padding:22px 18px}
+header b{color:#D9B26A;font-size:14px;letter-spacing:.05em}
+header h1{margin:6px 0 0;font:700 30px/1.1 Georgia,serif}
+section{padding:18px;border-bottom:1px solid var(--line)}
+h2{font:700 15px Arial;color:var(--gold2);letter-spacing:.05em;margin:0 0 10px;text-transform:uppercase}
+p{margin:6px 0}
+.muted{color:var(--muted);font-size:14px}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;font:16px Arial;padding:11px 12px;border:2px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+textarea{min-height:90px}
+label{display:block;margin:10px 0 4px;font-weight:700;font-size:15px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:9px;border:0;font:700 16px Arial;cursor:pointer;margin:8px 8px 0 0}
+.pri{background:var(--navy);color:#fff}.sec{background:#fff;color:var(--navy);border:2px solid var(--navy)}.lite{background:var(--cream);color:var(--navy)}.gold{background:var(--gold);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.full{width:100%;margin-right:0}
+.box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0}
+.ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}.wait{color:var(--amber);font-weight:700}
+.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700;margin:2px 4px 2px 0}
+.c-SIGNED{background:#E3F4E6;color:var(--green)}.c-DEEMED{background:#F6EFDF;color:var(--gold2)}.c-PENDING{background:#FDE8E6;color:var(--red)}.c-CONCERN{background:#FFF0D9;color:var(--amber)}.c-VOID{background:#EEE;color:#666}
+.person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}
+.person .nm{font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:0} .slg{font:700 13px Arial;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 2px} .slr{border-top:1px dashed var(--line);padding:10px 0 4px} .sln{display:flex;flex-direction:column;gap:2px;font-size:17px} .slb{display:flex;flex-wrap:wrap}.slb .btn{flex:1 1 150px}
+.alertc{background:#FFF8EC;border:2px solid var(--amber);border-radius:10px;padding:14px;margin:10px 0}
+.itm{padding:10px 0;border-top:1px dashed var(--line)}
+.sig{height:70px;width:210px;background:#fff;border:1px solid var(--line);border-radius:6px;display:inline-block;vertical-align:middle}
+details{margin:8px 0}
+summary{cursor:pointer;font-weight:700;color:var(--navy);min-height:40px;display:flex;align-items:center}
+.lock{max-width:460px}
+.note{background:#EEF2F9;border-radius:8px;padding:10px 12px;font-size:14px;margin:8px 0}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><b>RT LENDING CORP.</b><h1>Passbook · Admin</h1></header>
+<div id="app"><section><p>Binubuksan…</p></section></div>
+</div>
+<script src="core.js"></script>
+<script src="xlsx.mini.min.js"></script>
+<script>
+{
+const $ = (s) => document.querySelector(s), E = RT.esc, P$ = RT.peso, enc = new TextEncoder();
+const app = $("#app");
+const BASE = location.origin + location.pathname.replace(/admin\.html.*$/, "");
+const REPO = (() => { const o = location.hostname.split(".")[0], r = location.pathname.split("/").filter(Boolean)[0]; return location.hostname.endsWith("github.io") && r ? "https://github.com/" + o + "/" + r + "/upload/main" : ""; })();
+let D = null, MASTER = null, AKEY = null, ST = null, LINKS = {}, MSG = "";
+
+const TPL = {
+  B: "Ako si «PANGALAN» («ID»), borrower ng «CO».\n" +
+     "1. Kinikilala ko na hanggang «PETSA», ang utang ko ay: regular na utang «PRINCIPAL»; bonus advance «BONUS»; hindi pa bayad na dues (kasama ang surcharge) «KULANG».\n" +
+     "2. Ang dues ay «RATE» ng regular na utang kada sweldo («RATE_BUWAN» kada buwan), kinakaltas sa sweldo ko tuwing ika-15 at katapusan ng buwan. Sa ngayon, «DUE» kada sweldo.\n" +
+     "3. Ang dues na hindi nakaltas ay ARREARS. Kapag hindi pa bayad pagkatapos ng payroll period, may surcharge na «SUR» sa bawat «BLOCK» na kulang (ang kulang na mas mababa sa «BLOCK» ay bilang na «BLOCK»), at nadadagdag ito kada period.\n" +
+     "4. Ang sweldong pumasok hanggang «LATE» araw pagkatapos ng period ay ibinibilang sa period na iyon, at may «GRACE» araw na palugit para bayaran ang kulang.\n" +
+     "5. Ang sobra ng sweldo ko pagkatapos ng kaltas ay ibinibigay sa akin (GCash o ayon sa napagkasunduan).\n" +
+     "6. Ang bawat pagkilala sa passbook ko (slip, bagong utang, balanse at iba pa) ay ituturing kong TINANGGAP kapag wala akong pirma o tutol sa loob ng «ARAW» araw mula nang maipadala.\n" +
+     "7. Naka-lock ang pirma ko at hindi na mababago o mabubura.\n" +
+     "8. Pumapayag ako na itala at gamitin ng «CO» ang personal kong datos para lamang sa pautang na ito, ayon sa Data Privacy Act of 2012 (RA 10173).\n" +
+     "9. Para sa akin lang ang link ng passbook ko, at hindi ko ito ibabahagi.",
+  I: "Ako si «PANGALAN», co-investor ng «CO».\n" +
+     "1. Kinikilala ko na hanggang «PETSA», ang puhunan ko ay «PUHUNAN».\n" +
+     "2. Ang kita ko ay «RATE_INV» kada buwan ng puhunan ko, ibinibigay kada sweldo (kalahati tuwing ika-15 at katapusan ng buwan).\n" +
+     "3. «BAWAS»\n" +
+     "4. Sa ngayon, «IBIBIGAY» ang ibinibigay sa akin kada sweldo.\n" +
+     "5. Makikita sa passbook ko ang bawat dagdag, bawas, payout, extra at singil, may petsa at oras.\n" +
+     "6. Ang bawat pagkilala sa passbook ko ay ituturing kong TINANGGAP kapag wala akong pirma o tutol sa loob ng «ARAW» araw mula nang maipadala.\n" +
+     "7. Naka-lock ang pirma ko at hindi na mababago o mabubura.\n" +
+     "8. Pumapayag ako na itala at gamitin ng «CO» ang personal kong datos para lamang sa pamumuhunang ito, ayon sa Data Privacy Act of 2012 (RA 10173).\n" +
+     "9. Para sa akin lang ang link ng passbook ko, at hindi ko ito ibabahagi.\n«KASAMA»",
+  W: "Ako si «PANGALAN», taga-withdraw ng «CO».\n" +
+     "1. Ang bayad sa akin ay «FEE_SWELDO» bawat withdraw ng SWELDO at «FEE_BONUS» bawat withdraw ng BONUS.\n" +
+     "2. Iingatan ko ang lahat ng ipinagkakatiwala sa akin para sa withdraw (card, PIN at pera). Hindi ko ito ibabahagi kaninuman, at ibibigay ko nang buo ang na-withdraw sa «CO» sa araw ding iyon.\n" +
+     "3. Makikita sa passbook ko ang bawat bayad, extra at singil, may petsa at oras.\n" +
+     "4. Ang bawat pagkilala sa passbook ko ay ituturing kong TINANGGAP kapag wala akong pirma o tutol sa loob ng «ARAW» araw mula nang maipadala.\n" +
+     "5. Naka-lock ang pirma ko at hindi na mababago o mabubura.\n" +
+     "6. Pumapayag ako na itala at gamitin ng «CO» ang personal kong datos para lamang sa gawaing ito, ayon sa Data Privacy Act of 2012 (RA 10173).\n" +
+     "7. Para sa akin lang ang link ng passbook ko, at hindi ko ito ibabahagi."
+};
+const AUTO = { K: "Kasunduan (isang beses)", S: "Slip kada sweldo", P: "Payout ng investor", W: "Bayad sa taga-withdraw", R: "Bagong utang", BN: "Bonus advance", X: "Extra na ibinigay", SG: "Extra singil" };
+
+function fresh() {
+  return { v: 1, created: Date.now(), updated: 0, days: 7, tpl: Object.assign({}, TPL), auto: { K: 1, S: 1, P: 1, W: 1, R: 1, BN: 1, X: 1, SG: 1 },
+    views: [], accounts: {}, items: {}, seen: {}, form: formsDefault(), co: {}, asof: "", period: "", excelAt: 0 };
+}
+
+/* ---------- keys ---------- */
+async function hmac(keyBytes, msg) { const k = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); return new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(msg))); }
+async function masterFrom(pass, salt) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveBits"]);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", salt: RT.ub64u(salt), iterations: 310000, hash: "SHA-256" }, base, 256));
+}
+async function verifierOf() { return RT.b64u(await RT.sha(await hmac(MASTER, "verify"))); }
+
+/* ---------- start ---------- */
+async function boot() {
+  try { const r = await fetch("data.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) D = await r.json(); } catch (_) {}
+  if (!window.crypto || !crypto.subtle) { app.innerHTML = "<section><p class=bad>Kailangang buksan ang page na ito sa https.</p></section>"; return; }
+  lockView();
+}
+function lockView() {
+  const first = !(D && D.verifier);
+  app.innerHTML = '<section class="lock"><h2>' + (first ? "Gumawa ng lihim na password" : "Lihim na password") + "</h2>" +
+    (first ? '<p class="muted">Ito ang susi ng lahat ng passbook. Ikaw lang ang dapat makaalam. Gawin itong mahaba, gaya ng isang pangungusap na madali mong tandaan (hindi bababa sa 12 letra). Isulat ito sa ligtas na lugar: kapag nawala ito, kailangang gumawa ng bagong links para sa lahat.</p>' : "") +
+    '<label for="pw">Password</label><input type="password" id="pw" autocomplete="current-password">' +
+    (first ? '<label for="pw2">Ulitin ang password</label><input type="password" id="pw2" autocomplete="new-password">' : "") +
+    '<button class="btn pri full" id="unlock">' + (first ? "SIMULAN" : "BUKSAN") + '</button><p id="lk" class="muted"></p></section>';
+  $("#pw").focus();
+  const go = async () => {
+    const pw = $("#pw").value;
+    if (first) {
+      if (pw.length < 12) return ($("#lk").textContent = "Masyadong maikli. Hindi bababa sa 12 letra.");
+      if (pw !== $("#pw2").value) return ($("#lk").textContent = "Hindi pareho ang dalawang password.");
+    }
+    $("#lk").textContent = "Sandali lang…"; $("#unlock").disabled = true;
+    const salt = D && D.salt ? D.salt : RT.b64u(crypto.getRandomValues(new Uint8Array(16)));
+    MASTER = await masterFrom(pw, salt);
+    const ver = await verifierOf();
+    if (D && D.verifier && D.verifier !== ver) { MASTER = null; $("#unlock").disabled = false; return ($("#lk").textContent = "Mali ang password."); }
+    AKEY = await RT.aesRaw((await hmac(MASTER, "admin")).slice(0, 32));
+    ST = null;
+    if (D && D.admin) { try { ST = await RT.open(AKEY, D.admin); } catch (_) {} }
+    const draft = RT.get("rt:admin:draft", null);
+    if (draft && draft.salt === salt && (!ST || draft.at > (ST.updated || 0))) {
+      try { const x = await RT.open(AKEY, draft.box); ST = x; MSG = "Itinuloy ang mga pagbabagong hindi pa na-upload sa GitHub."; } catch (_) {}
+    }
+    if (!ST) ST = fresh();
+    ST.salt = salt; ST.verifier = ver;
+    await refreshLinks(); main();
+  };
+  $("#unlock").onclick = go; $("#pw").onkeydown = (e) => { if (e.key === "Enter" && !first) go(); };
+}
+
+async function draft() { ST.dirty = Date.now(); RT.put("rt:admin:draft", { at: ST.dirty, salt: ST.salt, box: await RT.seal(AKEY, ST) }); }
+
+/* ---------- viewers & links ---------- */
+function viewersOf(akey) { // from the Excel's PASSBOOK sheet: the holder first, then the KASAMA rows
+  const A = ST.accounts[akey]; if (!A) return [];
+  const own = (ST.views || []).filter((v) => v.akey === akey);
+  const h = own.find((v) => v.holder) || { vkey: akey, name: A.name, role: A.type === "B" ? "Borrower" : A.type === "I" ? "Co-investor" : "Taga-withdraw", holder: true };
+  return [h].concat(own.filter((v) => !v.holder)).map((v) => ({ key: v.vkey, name: v.name, role: v.role, holder: v.holder ? 1 : 0, link: v.key, ok: v.ok }));
+}
+function listed(A) { return A.status !== "WALA NA SA EXCEL" && (A.type !== "B" || A.status === "ACTIVE" || A.status === "FULLY PAID"); }
+async function refreshLinks() {
+  LINKS = {};
+  for (const akey of Object.keys(ST.accounts)) for (const v of viewersOf(akey)) {
+    if (!v.ok) continue;
+    LINKS[v.key] = { link: v.link, pid: await RT.pidOf(v.link), name: v.name, akey, role: v.role };
+  }
+}
+
+/* ---------- Excel ---------- */
+// newer Excel wording -> the names used here (both versions of the Excel are read the same way)
+const ALIAS = { "ADDITIONAL PAYOUT": "EXTRA BAYAD (itemized)", "ADDITIONAL CHARGE": "EXTRA SINGIL (itemized)", "WITHDRAWAL AGENT FEE": "BAYAD SA TAGA-WITHDRAW",
+  "AWAITING SALARY": "HINIHINTAY", "NOT YET DUE": "PENDING" };
+const canon = (x) => { const t = String(x == null ? "" : x).trim(); return ALIAS[t.toUpperCase()] || t; };
+const REM_TL = { SALARY: "SWELDO", "CASH LOAN": "UTANG NA PERA", OTHERS: "IBA PA" };
+const ROLE_TL = { "WITHDRAWAL AGENT": "Taga-withdraw", "AUTHORIZED USER": "Kasama" };
+const roleTL = (x) => { const t = String(x == null ? "" : x).trim(); return ROLE_TL[t.toUpperCase()] || t; };
+const FOR_TL = { "THE CHILDREN": "mga bata", CHILDREN: "mga bata" };
+const forTL = (x) => { const t = String(x == null ? "" : x).trim(); return FOR_TL[t.toUpperCase()] || t; };
+const remTL = (x) => { const t = String(x == null ? "" : x).trim(); return REM_TL[t.toUpperCase()] || t; };
+const TL = {
+  "PAYROLL COLLECTION": "Kaltas sa sweldo", "PAYMENT – REGULAR PRINCIPAL": "Bayad sa principal", "PAYMENT – REGULAR DUE": "Bayad sa dues / ARREARS",
+  "PAYMENT – BONUS PRINCIPAL": "Bayad sa bonus advance", "PAYMENT – BONUS INTEREST": "Bayad sa bonus interest", "LOAN RELEASE – REGULAR": "Bagong utang",
+  "OPENING – REGULAR LOAN": "Utang sa simula ng record", "ADJUSTMENT – REGULAR PRINCIPAL": "Adjustment sa utang", "ADJUSTMENT – REGULAR DUE": "Adjustment sa dues",
+  "ADJUSTMENT – BONUS PRINCIPAL": "Adjustment sa bonus advance", "ADJUSTMENT – BONUS INTEREST": "Adjustment sa bonus interest", "EXTRA BAYAD (itemized)": "Extra mula sa RT LENDING CORP.",
+  "EXTRA SINGIL (itemized)": "Extra singil", "INVESTOR CAPITAL IN": "Dagdag puhunan", "INVESTOR CAPITAL RETURN": "Ibinalik na puhunan", "INVESTOR PAYOUT": "Payout",
+  "BAYAD SA TAGA-WITHDRAW": "Bayad sa withdraw"
+};
+const IN_TO_PERSON = new Set(["LOAN RELEASE – REGULAR", "EXTRA BAYAD (itemized)", "INVESTOR PAYOUT", "INVESTOR CAPITAL RETURN", "BAYAD SA TAGA-WITHDRAW"]);
+const ymd = (s) => (typeof s === "number" ? new Date(Math.round((s - 25569) * 86400000)).toISOString().slice(0, 10) : null);
+const hm = (s) => { if (typeof s !== "number") return "00:00"; const m = Math.round((s % 1) * 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+const num = (x) => (typeof x === "number" ? x : 0);
+const pct = (r) => (Math.round(r * 1000) / 10) + "%";
+const short = (d) => { const [y, m, dd] = d.split("-").map(Number); return RT.MON[m - 1] + " " + dd; };
+
+function readExcel(buf) {
+  const wb = XLSX.read(buf, { type: "array", sheets: ["SETTINGS", "BORROWERS", "BONUSES", "LEDGER", "OWNERSHIP", "GRAPHDATA", "PASSBOOK"], cellFormula: false, cellHTML: false, cellText: false, cellStyles: false });
+  const sh = (n) => { const w = wb.Sheets[n]; if (!w) throw new Error("Walang sheet na " + n + ". Ang RT LENDING SYSTEM Excel ba ito?"); return w; };
+  const S = sh("SETTINGS"), B = sh("BORROWERS"), N = sh("BONUSES"), L = sh("LEDGER"), O = sh("OWNERSHIP"), G = sh("GRAPHDATA"), PB = sh("PASSBOOK");
+  const v = (w, a) => (w[a] ? w[a].v : null);
+  const must = [[B, "B5", "ID"], [B, "Q5", "REGULAR PRINCIPAL"], [L, "F5", "TYPE"], [L, "AE5", ["KABUUANG KALTAS", "TOTAL DEDUCTION"]], [N, "B5", "BONUS ID"], [O, "B59", "INVESTOR"], [G, "A3", "SLIP"], [PB, "B7", ["URI", "TYPE"]], [PB, "I7", "PASSBOOK KEY"]];
+  must.forEach(([w, a, t]) => { const got = String(v(w, a) || "").toUpperCase(); if (![].concat(t).some((x) => got.startsWith(x))) throw new Error("Iba ang ayos ng Excel (" + a + "). Gamitin ang pinakabagong RT LENDING SYSTEM."); });
+  const set = { co: v(S, "C6") || "RT LENDING CORP.", owner: v(S, "C7") || "", tagline: v(S, "C8") || "", asof: ymd(v(S, "C9")), activeP: ymd(v(S, "C12")), activeLbl: v(S, "C14") || "",
+    rate: num(v(S, "C20")) || 0.025, sur: num(v(S, "C24")), block: num(v(S, "C25")), late: num(v(S, "C26")), grace: num(v(S, "C27")), pay: v(S, "C32") || "",
+    feeSal: num(v(S, "C35")), feeBon: num(v(S, "C36")), invRate: num(v(S, "C38")) || 0.05, start: ymd(v(S, "C28")), wd: [] };
+  for (let r = 6; r <= 15; r++) { const n = v(S, "Z" + r); if (n) set.wd.push(String(n).trim()); }
+  const led = [];
+  for (let r = 6; r <= 3005; r++) {
+    if (typeof v(L, "C" + r) !== "number" || v(L, "W" + r) !== 1) continue;
+    led.push({ r, txn: v(L, "B" + r), date: ymd(v(L, "C" + r)), time: hm(v(L, "D" + r)), party: String(v(L, "E" + r) || "").trim(), type: canon(v(L, "F" + r)), amt: num(v(L, "G" + r)),
+      sal: num(v(L, "H" + r)), rem: remTL(v(L, "Q" + r)), id: v(L, "T" + r) || "", per: ymd(v(L, "V" + r)), ded: num(v(L, "AE" + r)), net: num(v(L, "AF" + r)) });
+  }
+  const bon = [];
+  for (let r = 6; r <= 305; r++) {
+    if (!v(N, "B" + r) || !v(N, "L" + r)) continue;
+    bon.push({ bid: v(N, "B" + r), id: v(N, "L" + r), type: String(v(N, "D" + r) || "").split(" – ")[0], principal: num(v(N, "E" + r)), released: ymd(v(N, "F" + r)), time: hm(v(N, "G" + r)),
+      paidThru: ymd(v(N, "H" + r)), source: v(N, "J" + r), left: num(v(N, "R" + r)), status: v(N, "V" + r) });
+  }
+  const accts = {};
+  const stx = { PAID: "Bayad na", "BAYAD NA": "Bayad na", PARTIAL: "May kulang pa", HINIHINTAY: "Hinihintay ang sweldo", PENDING: "Hindi pa ang sweldo" };
+  for (let r = 6; r <= 105; r++) {
+    const id = v(B, "B" + r), name = String(v(B, "O" + r) || "").trim();
+    if (!id || !name) continue;
+    const seq = num(v(B, "AE" + r)), graph = [];
+    if (seq >= 1 && seq <= 30) for (let k = 1; k <= 6; k++) { const rr = 3 + seq * 8 + k; if (typeof v(G, "C" + rr) === "number") graph.push({ label: String(v(G, "B" + rr) || ""), dapat: num(v(G, "C" + rr)), nakaltas: num(v(G, "D" + rr)) }); }
+    const hist = led.filter((x) => x.id === id && TL[x.type]).map((x) => histRow(x, "B"));
+    const ps = canon(v(B, "X" + r));
+    accts["B|" + id] = { type: "B", key: "B|" + id, id, name, first: String(v(B, "E" + r) || "").trim(), status: String(v(B, "C" + r) || ""), school: v(B, "G" + r) || "", ratePct: pct(num(v(B, "P" + r)) || set.rate),
+      principal: num(v(B, "Q" + r)), duePerPay: num(v(B, "R" + r)), bonusPrincipal: num(v(B, "S" + r)), unpaid: num(v(B, "T" + r)), total: num(v(B, "U" + r)),
+      period: { label: set.activeLbl, start: set.activeP, due: num(v(B, "AA" + r)), bint: num(v(B, "AB" + r)), arr: num(v(B, "AC" + r)), tdue: num(v(B, "V" + r)), coll: num(v(B, "W" + r)),
+        salary: num(v(B, "AI" + r)), sent: num(v(B, "AH" + r)), kulang: num(v(B, "AL" + r)), status: ps, statusText: stx[ps] || ps },
+      bonuses: bon.filter((b) => b.id === id && b.left > 0.004).map((b) => ({ type: b.type, left: b.left, paidThru: b.paidThru })), graph, history: hist.reverse() };
+  }
+  for (let r = 7; r <= 16; r++) {
+    const name = String(v(O, "B" + r) || "").trim(); if (!name) continue;
+    let k = null;
+    for (let q = 60; q <= 69; q++) if (String(v(O, "B" + q) || "").trim() === name) k = q;
+    const mine = led.filter((x) => !x.id && x.party === name && TL[x.type]);
+    const sum = (t) => mine.filter((x) => x.type === t).reduce((a, x) => a + x.amt, 0);
+    const per = {}; mine.filter((x) => x.type === "INVESTOR PAYOUT").forEach((x) => { per[x.per] = (per[x.per] || 0) + x.amt; });
+    const rate = k ? num(v(O, "D" + k)) || set.invRate : set.invRate;
+    accts["I|" + name] = { type: "I", key: "I|" + name, name, status: String(v(O, "C" + r) || ""), capital: num(v(O, "D" + r)), ratePct: pct(rate), since: ymd(v(O, "G" + r)),
+      benefitMonthly: num(v(O, "P" + r)), basis: num(v(O, "N" + r)), basisRate: num(v(O, "O" + r)), allowanceMonthly: num(v(O, "Q" + r)),
+      perPay: k ? { interest: num(v(O, "E" + k)), benefit: num(v(O, "F" + k)), allowance: num(v(O, "G" + k)), give: num(v(O, "H" + k)), singil: num(v(O, "I" + k)), cash: num(v(O, "J" + k)),
+        given: num(v(O, "K" + k)), short: num(v(O, "L" + k)), allowFor: forTL(v(O, "M" + k)), allowFrom: num(v(O, "N" + k)) } : { interest: 0, benefit: 0, allowance: 0, give: 0, singil: 0, cash: 0, given: 0, short: 0 },
+      toDate: { payouts: sum("INVESTOR PAYOUT"), capIn: sum("INVESTOR CAPITAL IN"), capOut: sum("INVESTOR CAPITAL RETURN"), extra: sum("EXTRA BAYAD (itemized)"), singil: sum("EXTRA SINGIL (itemized)") },
+      graph: Object.keys(per).sort().slice(-6).map((p) => ({ label: short(p), amt: per[p] })), history: mine.map((x) => histRow(x, "I")).reverse() };
+  }
+  set.wd.forEach((name) => {
+    const mine = led.filter((x) => !x.id && x.party === name && TL[x.type]);
+    const mon = (set.activeP || set.asof || "").slice(0, 7), cur = mine.filter((x) => x.date.slice(0, 7) === mon);
+    const isBon = (x) => /BONUS/i.test(x.rem) || (x.amt >= set.feeBon && set.feeBon > set.feeSal);
+    const wd = cur.filter((x) => x.type === "BAYAD SA TAGA-WITHDRAW");
+    const m = { label: RT.MON[Number(mon.slice(5, 7)) - 1] + " " + mon.slice(0, 4), nSal: wd.filter((x) => !isBon(x)).length, nBon: wd.filter(isBon).length,
+      fSal: wd.filter((x) => !isBon(x)).reduce((a, x) => a + x.amt, 0), fBon: wd.filter(isBon).reduce((a, x) => a + x.amt, 0),
+      extra: cur.filter((x) => x.type === "EXTRA BAYAD (itemized)").reduce((a, x) => a + x.amt, 0), singil: cur.filter((x) => x.type === "EXTRA SINGIL (itemized)").reduce((a, x) => a + x.amt, 0) };
+    m.net = m.fSal + m.fBon + m.extra - m.singil;
+    accts["W|" + name] = { type: "W", key: "W|" + name, name, status: "ACTIVE", feeSal: set.feeSal, feeBon: set.feeBon, month: m, history: mine.map((x) => histRow(x, "W")).reverse() };
+  });
+  const views = [];
+  for (let r = 8; r <= 147; r++) {
+    const name = String(v(PB, "C" + r) || "").trim(), akey = String(v(PB, "K" + r) || "").trim(), key = String(v(PB, "I" + r) || "").trim();
+    if (!name || !akey) continue;
+    const kas = r >= 128;
+    views.push({ vkey: kas ? akey + "|" + name : akey, name, akey, role: roleTL(v(PB, "H" + r)) || (kas ? "Kasama" : ""), key, ok: /^[A-Za-z0-9_-]{20,40}$/.test(key), holder: !kas });
+  }
+  return { set, accts, led, bon, views };
+}
+function histRow(x, kind) {
+  let text = TL[x.type], sub = "", amt = x.amt;
+  if (x.type === "PAYROLL COLLECTION") { amt = x.ded; sub = "Sweldo " + P$(x.sal) + " · Ipinadala sa iyo " + P$(x.net); }
+  if (x.type === "EXTRA BAYAD (itemized)" || x.type === "EXTRA SINGIL (itemized)") text += ": " + x.rem;
+  if (x.type === "BAYAD SA TAGA-WITHDRAW") text += ": " + (x.rem || "SWELDO");
+  if (x.type === "EXTRA BAYAD (itemized)" && kind !== "B") text = "Extra: " + x.rem;
+  if (x.type === "EXTRA SINGIL (itemized)" && kind !== "B") text = "Singil: " + x.rem;
+  const t = RT.tLabel(x.time);
+  return { date: x.date, text, sub: [sub, t].filter(Boolean).join(" · "), amt, dir: IN_TO_PERSON.has(x.type) ? "in" : "out" };
+}
+
+/* ---------- items (pipirmahan) ---------- */
+function fill(tpl, m) { return tpl.replace(/\bkay «OWNER»/g, "sa «CO»").replace(/«OWNER»/g, "«CO»").replace(/«([A-Z_]+)»/g, (_, k) => (m[k] != null ? m[k] : "")).split("\n").map((s) => s.trim().replace(/\.\.(?!\.)/g, ".")).filter((s) => s && !/^\d+\.\s*$/.test(s)); }
+function kasunduan(A, X) {
+  const s = X.set, extras = viewersOf(A.key).filter((x) => !x.holder);
+  const m = { PANGALAN: A.name, CO: s.co, OWNER: s.co, PETSA: RT.dLabel(s.asof), ARAW: String(ST.days), RATE: pct(s.rate), RATE_BUWAN: pct(s.rate * 2), SUR: P$(s.sur), BLOCK: P$(s.block), LATE: String(s.late), GRACE: String(s.grace) };
+  if (A.type === "B") Object.assign(m, { ID: A.id, PRINCIPAL: P$(A.principal), BONUS: P$(A.bonusPrincipal), KULANG: P$(A.unpaid), DUE: P$(A.duePerPay) });
+  if (A.type === "I") {
+    const parts = [];
+    if (A.benefitMonthly) parts.push(P$(A.benefitMonthly) + " kada buwan" + (A.basis && A.basisRate ? " (" + pct(A.basisRate) + " ng " + P$(A.basis) + ")" : ""));
+    if (A.allowanceMonthly) parts.push(P$(A.allowanceMonthly) + " kada buwan" + (A.perPay.allowFor ? " para sa " + A.perPay.allowFor : "") + (A.perPay.allowFrom ? " (mula sa " + P$(A.perPay.allowFrom) + ")" : ""));
+    Object.assign(m, { PUHUNAN: P$(A.capital), RATE_INV: A.ratePct, IBIBIGAY: P$(A.perPay.give),
+      BAWAS: parts.length ? "Mula sa kita ko, ibinibigay ko sa " + s.co + " ang " + parts.join(" at ") + "." : "Walang bawas sa kita ko.",
+      KASAMA: extras.length ? "May sariling link sa passbook na ito si " + extras.map((e) => e.name + " (" + e.role + ")").join(" at si ") + ", at pumipirma rin dito." : "" });
+  }
+  if (A.type === "W") Object.assign(m, { FEE_SWELDO: P$(A.feeSal), FEE_BONUS: P$(A.feeBon) });
+  const role = A.type === "B" ? "BORROWER" : A.type === "I" ? "INVESTOR" : "TAGA-WITHDRAW";
+  return { title: "KASUNDUAN AT PAGKILALA NG " + role, lines: fill(ST.tpl[A.type], m) };
+}
+function want(X) { // every item the Excel says should exist now
+  const out = [], s = X.set;
+  for (const A of Object.values(X.accts)) {
+    if (!listed(A)) continue;
+    const signers = viewersOf(A.key).map((v) => v.name), roles = {}; viewersOf(A.key).forEach((v) => { roles[v.name] = v.role; });
+    const base = { acct: A.key, holder: A.name, roles };
+    if (ST.auto.K) out.push(Object.assign({ id: "K|" + A.key, kind: "K", signers }, base, kasunduan(A, X)));
+    if (A.type === "B" && ST.auto.S && A.period.salary > 0.004) {
+      const p = A.period;
+      out.push(Object.assign({ id: "S|" + A.id + "|" + p.start, kind: "S", signers: [A.name] }, base, { title: "SLIP NG SWELDO · " + p.label, lines: [
+        "Sweldo na pumasok: " + P$(p.salary) + ".",
+        "Kaltas: " + P$(p.coll) + " (dues " + P$(p.due) + (p.bint ? ", bonus interest " + P$(p.bint) : "") + (p.arr ? ", ARREARS, surcharge at extra singil " + P$(p.arr) : "") + ").",
+        "Ipinadala sa akin: " + P$(p.sent) + "." + (p.kulang > 0.004 ? " Kulang pa: " + P$(p.kulang) + "." : ""),
+        "Kinikilala ko na tama ang slip na ito."] }));
+    }
+  }
+  for (const x of X.led) {
+    const owner = x.id ? X.accts["B|" + x.id] : X.accts["I|" + x.party] || X.accts["W|" + x.party];
+    if (!owner || !listed(owner)) continue;
+    const vs = viewersOf(owner.key), roles = {}; vs.forEach((v) => { roles[v.name] = v.role; });
+    const base = { acct: owner.key, holder: owner.name, roles, any: true, signers: vs.map((v) => v.name) };
+    const when = RT.dLabel(x.date) + (RT.tLabel(x.time) ? ", " + RT.tLabel(x.time) : "");
+    if (x.type === "INVESTOR PAYOUT" && ST.auto.P) out.push(Object.assign({ id: "P|" + x.txn, kind: "P" }, base, { title: "PAYOUT · " + RT.dLabel(x.date), lines: ["Natanggap ko ang payout na " + P$(x.amt) + " para sa sweldo ng " + RT.dLabel(x.per).replace(/, \d{4}$/, "") + " period (" + when + ")."] }));
+    if (x.type === "BAYAD SA TAGA-WITHDRAW" && ST.auto.W) out.push(Object.assign({ id: "W|" + x.txn, kind: "W" }, base, { title: "BAYAD SA WITHDRAW · " + RT.dLabel(x.date), lines: ["Natanggap ko ang " + P$(x.amt) + " na bayad sa withdraw ng " + (x.rem || "SWELDO") + " (" + when + ")."] }));
+    if (x.type === "LOAN RELEASE – REGULAR" && ST.auto.R && !(s.start && x.date < s.start)) out.push(Object.assign({ id: "R|" + x.txn, kind: "R" }, base, { title: "BAGONG UTANG · " + RT.dLabel(x.date), lines: ["Natanggap ko ang " + P$(x.amt) + " na utang (" + when + ").", (owner.duePerPay ? "Kasama na ang " + P$(x.amt * s.rate) + " nito (" + pct(s.rate) + " ng " + P$(x.amt) + ") sa " + P$(owner.duePerPay) + " na kaltas ko kada sweldo." : "Kasama na ang " + P$(x.amt * s.rate) + " nito (" + pct(s.rate) + " ng " + P$(x.amt) + ") sa kaltas ko kada sweldo.")] }));
+    if (x.type === "EXTRA BAYAD (itemized)" && ST.auto.X) out.push(Object.assign({ id: "X|" + x.txn, kind: "X" }, base, { title: "EXTRA · " + x.rem + " · " + RT.dLabel(x.date), lines: ["Natanggap ko ang " + x.rem + " na " + P$(x.amt) + " (" + when + ")."] }));
+    if (x.type === "EXTRA SINGIL (itemized)" && ST.auto.SG) out.push(Object.assign({ id: "SG|" + x.txn, kind: "SG" }, base, { title: "EXTRA SINGIL · " + x.rem + " · " + RT.dLabel(x.date), lines: ["Kinikilala ko ang extra singil na " + x.rem + " na " + P$(x.amt) + " (" + when + ").", owner.type === "B" ? "Kasama ito sa dues at ikakaltas sa sweldo." : "Ibabawas ito sa iaabot sa akin."] }));
+  }
+  if (ST.auto.BN) for (const b of X.bon) {
+    const A = X.accts["B|" + b.id]; if (!A || !listed(A) || b.source !== "RELEASED") continue;
+    out.push({ id: "BN|" + b.bid, kind: "BN", acct: A.key, holder: A.name, roles: { [A.name]: "Borrower" }, any: true, signers: [A.name], title: b.type + " · " + RT.dLabel(b.released),
+      lines: ["Natanggap ko ang " + P$(b.principal) + " na " + b.type + " (" + RT.dLabel(b.released) + ").", "Bayad ang dues hanggang " + RT.dLabel(b.paidThru) + "."] });
+  }
+  return out;
+}
+function merge(X) {
+  const now = Date.now(), seen = new Set(); let add = 0, upd = 0, gone = 0;
+  for (const w of want(X)) {
+    seen.add(w.id);
+    const it = ST.items[w.id];
+    if (!it) { ST.items[w.id] = Object.assign({ sent: now, sigs: {}, concerns: [] }, w); add++; continue; }
+    const st = RT.status(it, now, ST.days);
+    if (it.void && !Object.keys(it.sigs || {}).length) { it.void = false; }
+    if (st.code === "PENDING" && !Object.keys(it.sigs || {}).length && JSON.stringify([it.title, it.lines, it.signers]) !== JSON.stringify([w.title, w.lines, w.signers])) {
+      Object.assign(it, { title: w.title, lines: w.lines, signers: w.signers, roles: w.roles }); upd++;
+    } else if (JSON.stringify([it.title, it.lines]) !== JSON.stringify([w.title, w.lines])) it.changed = 1; else delete it.changed;
+  }
+  const preR = new Set(X.led.filter((x) => x.type === "LOAN RELEASE – REGULAR" && X.set.start && x.date < X.set.start).map((x) => "R|" + x.txn));
+  for (const it of Object.values(ST.items)) {
+    if (preR.has(it.id) && !seen.has(it.id) && !Object.keys(it.sigs || {}).length && !(it.concerns || []).length) { delete ST.items[it.id]; continue; }
+    if (it.kind !== "C" && !seen.has(it.id) && !it.void && !Object.keys(it.sigs || {}).length && ST.accounts[it.acct] && listed(ST.accounts[it.acct])) {
+      if (it.kind === "S" || it.kind === "K") continue; // past slips and agreements stay
+      it.void = true; gone++;
+    }
+  }
+  return { add, upd, gone };
+}
+
+/* ---------- responses from the Google Forms (CSV, or the .zip that Google Forms downloads) ---------- */
+async function unzipCsv(file) {
+  const buf = new Uint8Array(await file.arrayBuffer()), dv = new DataView(buf.buffer), out = [];
+  let e = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) return out;
+  let p = dv.getUint32(e + 16, true);
+  for (let k = 0, n = dv.getUint16(e + 10, true); k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const meth = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), lo = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(buf.subarray(p + 46, p + 46 + nl));
+    p += 46 + nl + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true);
+    if (!/\.csv$/i.test(name) || (meth !== 0 && meth !== 8)) continue;
+    const at = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), raw = buf.subarray(at, at + size);
+    const bytes = meth === 0 ? raw : new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+    out.push(new TextDecoder().decode(bytes));
+  }
+  return out;
+}
+function csv(text) {
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ",") { row.push(f); f = ""; } else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; } else f += c;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+async function applyResponses(text) {
+  const byPid = {}; Object.values(LINKS).forEach((l) => { byPid[l.pid] = l; });
+  let sig = 0, ask = 0, bad = 0, old = 0;
+  for (const row of csv(text)) {
+    const cell = row.find((c) => c.trim().startsWith("{") && c.includes('"item"'));
+    if (!cell) continue;
+    let d; try { d = JSON.parse(cell); } catch (_) { continue; }
+    const key = [d.k, d.item, d.pid, d.at].join("|");
+    if (ST.seen[key]) { old++; continue; }
+    const who = byPid[d.pid], it = ST.items[d.item];
+    const okp = who && (await RT.proof(who.link, [d.k, d.item, d.pid, d.name, d.at, d.hash, d.k === "SIGN" ? d.svg : d.msg])) === d.proof;
+    if (!okp || !it || it.acct !== who.akey) { bad++; ST.seen[key] = 1; continue; }
+    ST.seen[key] = 1;
+    if (d.k === "SIGN") { if (!it.sigs[who.name]) { it.sigs[who.name] = { at: d.at, path: d.svg, hash: d.hash, same: d.hash === (await RT.itemHash(it)) }; sig++; } }
+    else if (d.k === "CONCERN") { it.concerns.push({ at: d.at, by: who.name, msg: d.msg, resolved: false }); ask++; }
+  }
+  return { sig, ask, bad, old };
+}
+
+/* ---------- data.json ---------- */
+async function build() {
+  const people = {}, now = Date.now();
+  ST.updated = now;
+  for (const l of Object.values(LINKS)) {
+    const A = ST.accounts[l.akey]; if (!A || !listed(A)) continue;
+    const items = Object.values(ST.items).filter((it) => it.acct === A.key && !it.void).map((it) => ({ id: it.id, kind: it.kind, title: it.title, lines: it.lines, holder: it.holder,
+      signers: it.signers, roles: it.roles, any: it.any, sent: it.sent, restart: it.restart, sigs: Object.fromEntries(Object.entries(it.sigs || {}).map(([n, s]) => [n, { at: s.at, path: s.path }])),
+      concerns: (it.concerns || []).map((c) => ({ at: c.at, by: c.by, msg: c.msg, resolved: c.resolved, reply: c.reply, replyAt: c.replyAt })) }));
+    people[l.pid] = await RT.seal(await RT.aesKey(l.link), { v: 1, viewer: { name: l.name, role: l.role }, acct: A, items, co: ST.co, asof: ST.asof, period: ST.period, days: ST.days, updated: now });
+  }
+  const out = { v: 1, updated: now, salt: ST.salt, verifier: ST.verifier, days: ST.days, form: ST.form, admin: await RT.seal(AKEY, Object.assign({}, ST, { dirty: 0 })), people };
+  return JSON.stringify(out);
+}
+
+/* ---------- screens ---------- */
+function counts(akey) {
+  const now = Date.now(), c = { PENDING: 0, SIGNED: 0, DEEMED: 0, CONCERN: 0 };
+  Object.values(ST.items).filter((it) => it.acct === akey && !it.void).forEach((it) => { c[RT.status(it, now, ST.days).code]++; });
+  return c;
+}
+function main() {
+  withForms(ST);
+  const now = Date.now(), accts = Object.values(ST.accounts);
+  const open = []; Object.values(ST.items).forEach((it) => (it.concerns || []).forEach((c, i) => { if (!c.resolved) open.push({ it, c, i }); }));
+  let h = "";
+  if (MSG) h += '<section><div class="note">' + E(MSG) + "</div></section>";
+  h += '<section><h2>1 · Excel</h2><p class="muted">Piliin ang pinakabagong RT LENDING SYSTEM (pagkatapos i-save sa Excel). ' +
+    (ST.excelAt ? "Huling basa: " + E(RT.stamp(ST.excelAt)) + " · as of " + E(RT.dLabel(ST.asof)) : "Wala pang nababasang Excel.") + '</p><input type="file" id="xl" accept=".xlsx,.xlsm"><p id="xlm" class="muted"></p></section>';
+  h += '<section><h2>Mga slip</h2><p class="muted">Ginagawa ang mga slip dito mismo sa phone mula sa Excel na pinili mo. Walang ina-upload. Bawat slip ay para lang sa taong nakapangalan, at ikaw ang pipili kung kanino ipapadala.</p><div id="sl">' + slipsHTML() + '</div><p id="slm" class="muted"></p></section>';
+  h += '<section><h2>2 · Mga sagot mula sa Google Form</h2><p class="muted">Kapag may bagong pirma o tanong: i-download ang responses ng <b>Passbook Signatures</b> at <b>Passbook Concerns</b>, at piliin dito ang dalawang file (.zip o .csv) nang sabay.</p><input type="file" id="rs" accept=".csv,.zip,text/csv,application/zip,application/x-zip-compressed" multiple><p id="rsm" class="muted"></p></section>';
+  h += '<section><h2>May tanong o tutol (' + open.length + ")</h2>" + (open.length ? open.map((o) =>
+    '<div class="alertc"><b>' + E(o.c.by) + "</b> · " + E(RT.stamp(o.c.at)) + "<br>" + E(o.it.title) + "<p>" + E(o.c.msg) + '</p><label>Sagot mo (makikita niya)</label><textarea data-reply="' + E(o.it.id) + "|" + o.i + '"></textarea>' +
+    '<button class="btn pri" data-solve="' + E(o.it.id) + "|" + o.i + '">NAAYOS NA</button><p class="muted">Pagka-ayos, magsisimula ulit ang ' + ST.days + " araw kung wala pang pirma.</p></div>").join("") : '<p class="muted">Walang bukas na tanong o tutol.</p>') + "</section>";
+  h += '<section><h2>Mga passbook at link</h2>' + (accts.length ? accts.filter(listed).sort((a, b) => a.type.localeCompare(b.type) || (a.id || a.name).localeCompare(b.id || b.name)).map((A) => {
+    const c = counts(A.key);
+    return viewersOf(A.key).map((v) => '<div class="person"><div><div class="nm">' + E(v.name) + '</div><div class="muted">' + E(v.role) + (A.type === "B" ? " · " + E(A.id) : "") + "</div>" +
+      (v.holder ? '<span class="chip c-PENDING">' + c.PENDING + ' pipirmahan</span><span class="chip c-SIGNED">' + c.SIGNED + ' pirmado</span><span class="chip c-DEEMED">' + c.DEEMED + ' tinanggap</span>' + (c.CONCERN ? '<span class="chip c-CONCERN">' + c.CONCERN + " may tutol</span>" : "") : "") +
+      '</div><div class="row"><button class="btn lite" data-msg="' + E(v.key) + '">Mensahe</button><button class="btn lite" data-link="' + E(v.key) + '">Link</button></div></div>').join("");
+  }).join("") : '<p class="muted">Basahin muna ang Excel.</p>') +
+    '<p class="muted">Nasa Excel (PASSBOOK sheet) ang link, PASSBOOK KEY at mensahe ng bawat isa, pati ang KASAMA (hal. asawa).</p>' +
+    '<details><summary>Bagong PASSBOOK KEY (kapag naipasa sa iba ang link)</summary><p class="muted">Kopyahin at ilagay sa PASSBOOK KEY ng tao sa Excel. Pagka-upload ng bagong data.json, hindi na bubukas ang luma.</p><p><b id="nk"></b></p><button class="btn sec" id="mk">GUMAWA NG BAGONG KEY</button><button class="btn lite" id="ck">KOPYAHIN</button></details></section>';
+  h += '<section><h2>Mga pipirmahan</h2><select id="ia"><option value="">Hinihintay o may tutol</option><option value="*">Lahat (pinakabago)</option>' + accts.filter(listed).map((A) => '<option value="' + E(A.key) + '">' + E(A.name) + "</option>").join("") + '</select><div id="il"></div>' +
+    '<details><summary>Bagong pipirmahan (sariling sulat)</summary><label for="ca">Para kay</label><select id="ca">' + accts.filter(listed).map((A) => '<option value="' + E(A.key) + '">' + E(A.name) + "</option>").join("") +
+    '</select><label for="ct">Pamagat</label><input type="text" id="ct" placeholder="hal. PAGKILALA SA BALANSE"><label for="cl">Laman (isang talata bawat linya)</label><textarea id="cl"></textarea><button class="btn sec" id="cadd">IDAGDAG</button></details></section>';
+  h += '<section><details><summary>Kasunduan, patakaran at Google Form</summary>' +
+    '<label for="dy">Ilang araw bago ituring na TINANGGAP</label><input type="number" id="dy" min="1" max="60" value="' + ST.days + '">' +
+    '<label>Kusang gagawin na pipirmahan</label>' + Object.entries(AUTO).map(([k, t]) => '<label style="font-weight:400"><input type="checkbox" data-auto="' + k + '"' + (ST.auto[k] ? " checked" : "") + "> " + E(t) + "</label>").join("") +
+    ["B", "I", "W"].map((k) => '<label for="tp' + k + '">Kasunduan ng ' + ({ B: "borrower", I: "investor", W: "taga-withdraw" })[k] + '</label><textarea id="tp' + k + '" rows="10">' + E(ST.tpl[k]) + "</textarea>").join("") +
+    '<p class="muted">Ang «MGA SALITANG ITO» ay kusang napapalitan ng datos. Para lang sa mga bagong pipirmahan ang pagbabago.</p>' +
+    '<label for="fs">RT LENDING CORP. - Passbook Signatures (pre-filled link na may 1, 2, 3)</label><input type="text" id="fs" value="' + E(ST.form.signRaw || "") + '">' +
+    '<label for="fc">RT LENDING CORP. - Passbook Concerns (pre-filled link na may 1, 2, 3)</label><input type="text" id="fc" value="' + E(ST.form.concernRaw || "") + '">' +
+    '<p class="muted" id="fm">' + (ST.form.sign && ST.form.concern ? "Nakakabit na ang dalawang form." : "Hindi pa nakakabit ang Passbook Signatures at Passbook Concerns: hindi pa makakapagpadala ng pirma at tutol.") + '</p><button class="btn sec" id="save2">I-SAVE ANG MGA ITO</button></details></section>';
+  h += '<section><h2>3 · I-save sa GitHub</h2><p class="muted">I-download ang data.json, tapos i-upload sa GitHub (Add file ▸ Upload files ▸ Commit). Pagka-upload, updated na ang lahat ng passbook.</p>' +
+    '<button class="btn gold full" id="dl">I-DOWNLOAD ANG data.json</button>' + (REPO ? '<a class="btn sec full" href="' + E(REPO) + '" target="_blank" rel="noopener">BUKSAN ANG UPLOAD SA GITHUB</a>' : "") + '<p id="dlm" class="muted"></p></section>';
+  app.innerHTML = h; MSG = "";
+  items();
+  bind();
+  slipsBind();
+}
+function items() {
+  const sel = $("#ia").value, now = Date.now();
+  const list = Object.values(ST.items).filter((it) => sel === "*" ? true : sel ? it.acct === sel : ["PENDING", "CONCERN"].includes(RT.status(it, now, ST.days).code) && !it.void).sort((a, b) => b.sent - a.sent).slice(0, 80);
+  $("#il").innerHTML = list.length ? list.map((it) => {
+    const st = RT.status(it, now, ST.days);
+    return '<div class="itm"><b>' + E(it.title) + '</b> <span class="chip c-' + st.code + '">' + E(st.label) + (st.code === "PENDING" ? " · " + st.left + " araw" : "") + "</span>" +
+      '<div class="muted">' + E(it.holder) + " · ipinadala " + E(RT.stamp(it.sent)) + (it.changed ? " · <span class=wait>nagbago ang datos pagkatapos pirmahan</span>" : "") + "</div>" +
+      Object.entries(it.sigs || {}).map(([n, s]) => '<div class="muted">' + E(n) + " · " + E(RT.stamp(s.at)) + (s.same === false ? " · <span class=bad>iba ang laman nang pumirma</span>" : "") + '<br><canvas class="sig" data-path="' + E(s.path) + '"></canvas></div>').join("") +
+      (it.void ? "" : '<button class="btn lite" data-void="' + E(it.id) + '">Kanselahin</button>') + "</div>";
+  }).join("") : '<p class="muted">Wala pa.</p>';
+  document.querySelectorAll("canvas.sig").forEach((c) => { c.width = 420; c.height = 140; RT.drawStrokes(c.getContext("2d"), RT.strokesOf(c.dataset.path), 0, 0, 420, 140); });
+}
+const FORM_SIGN = "https://docs.google.com/forms/d/e/1FAIpQLSf6vmZQj8F9-IdfjCE-uLfeTuL5CgfSqrDisJWJD2zjWk8_Bw/viewform?usp=pp_url&entry.321061828=1&entry.744736386=2&entry.133644214=3";
+const FORM_CONCERN = "https://docs.google.com/forms/d/e/1FAIpQLSdEfnvpc0lnmj72TF3b8iwEnzf97a-aeBLypQIZvT_1xIVBzg/viewform?usp=pp_url&entry.321061828=1&entry.744736386=2&entry.133644214=3";
+function formsDefault() { return { signRaw: FORM_SIGN, concernRaw: FORM_CONCERN, sign: parseForm(FORM_SIGN), concern: parseForm(FORM_CONCERN) }; }
+function withForms(st) { if (!st.form || !st.form.sign || !st.form.concern) st.form = formsDefault(); return st; }
+function parseForm(raw) {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw.trim()), f = { url: u.origin + u.pathname.replace(/\/(viewform|formResponse)$/, "") + "/formResponse" };
+    u.searchParams.forEach((val, key) => { if (/^entry\.\d+$/.test(key)) { if (val.trim() === "1") f.name = key; if (val.trim() === "2") f.msg = key; if (val.trim() === "3") f.data = key; } });
+    return f.data ? f : null;
+  } catch (_) { return null; }
+}
+async function copy(text) { try { await navigator.clipboard.writeText(text); return true; } catch (_) { return false; } }
+/* SLIPS:BEGIN
+   MGA SLIP — each person's slip as a JPEG, drawn here on the phone from the Excel chosen in "1 · Excel".
+   Nothing is uploaded: the Excel stays in this page's memory only while it is open, and the admin picks who receives each slip.
+   The drawing follows the Excel itself (cell values, styles, merged cells, pictures, chart, print area, page footer),
+   so a change to a slip's layout in the Excel shows up here too. */
+const SX = { bytes: null, book: null, list: null, files: {}, busy: false };
+const NS_R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const xa = (el, tag) => (el ? Array.from(el.getElementsByTagNameNS("*", tag)) : []);
+const x1 = (el, tag) => (el ? el.getElementsByTagNameNS("*", tag)[0] || null : null);
+const xkid = (el, tag) => { if (!el) return null; for (const k of el.children) if (k.localName === tag) return k; return null; };
+const xrid = (el, a) => el.getAttributeNS(NS_R, a) || el.getAttribute("r:" + a) || "";
+const xon = (el, a, d) => { if (!el || !el.hasAttribute(a)) return d; const v = el.getAttribute(a); return v === "1" || v === "true"; };
+const colNum = (L) => { let n = 0; for (const ch of L) n = n * 26 + ch.charCodeAt(0) - 64; return n; };
+const colLet = (n) => { let s = ""; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+const refRC = (ref) => { const m = /^\$?([A-Z]{1,3})\$?(\d+)$/.exec(String(ref).trim()); return m ? { c: colNum(m[1]), r: +m[2] } : null; };
+const rangeRC = (t) => { const [a, b] = String(t).split(":"); const p = refRC(a), q = refRC(b || a); return p && q ? { c1: Math.min(p.c, q.c), r1: Math.min(p.r, q.r), c2: Math.max(p.c, q.c), r2: Math.max(p.r, q.r) } : null; };
+function partPath(base, target) {
+  if (!target) return "";
+  if (target.startsWith("/")) return target.slice(1);
+  const out = base.split("/"); out.pop();
+  for (const seg of target.split("/")) { if (seg === "..") out.pop(); else if (seg && seg !== ".") out.push(seg); }
+  return out.join("/");
+}
+
+/* ---- the Excel file is a zip ---- */
+function zipIndex(buf) {
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength), ents = new Map();
+  let e = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error("Hindi mabasa ang Excel.");
+  let p = dv.getUint32(e + 16, true);
+  for (let k = 0, n = dv.getUint16(e + 10, true); k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const meth = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), lo = dv.getUint32(p + 42, true);
+    ents.set(new TextDecoder().decode(buf.subarray(p + 46, p + 46 + nl)).replace(/\\/g, "/"), { meth, size, lo });
+    p += 46 + nl + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true);
+  }
+  return ents;
+}
+async function zipRead(buf, ents, name) {
+  let e = ents.get(name);
+  if (!e) { const low = name.toLowerCase(); for (const [k, v] of ents) if (k.toLowerCase() === low) { e = v; break; } }
+  if (!e) return null;
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const at = e.lo + 30 + dv.getUint16(e.lo + 26, true) + dv.getUint16(e.lo + 28, true), raw = buf.subarray(at, at + e.size);
+  if (e.meth === 0) return raw;
+  if (e.meth !== 8) return null;
+  return new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+}
+
+/* ---- workbook parts ---- */
+const IDX_CLR = ["000000", "FFFFFF", "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000", "FFFFFF", "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF",
+  "800000", "008000", "000080", "808000", "800080", "008080", "C0C0C0", "808080", "9999FF", "993366", "FFFFCC", "CCFFFF", "660066", "FF8080", "0066CC", "CCCCFF",
+  "000080", "FF00FF", "FFFF00", "00FFFF", "800080", "800000", "008080", "0000FF", "00CCFF", "CCFFFF", "CCFFCC", "FFFF99", "99CCFF", "FF99CC", "CC99FF", "FFCC99",
+  "3366FF", "33CCCC", "99CC00", "FFCC00", "FF9900", "FF6600", "666699", "969696", "003366", "339966", "003300", "333300", "993300", "993366", "333399", "333333"];
+function tint(hex, t) {
+  const n = parseInt(hex.slice(1), 16); let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const f = (c) => Math.round(t < 0 ? c * (1 + t) : c + (255 - c) * t);
+  r = f(r); g = f(g); b = f(b);
+  return "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+}
+async function bookOpen(bytes) {
+  const ents = zipIndex(bytes), dec = new TextDecoder();
+  const B = { ents, cache: {}, imgs: {}, charts: {} };
+  B.raw = (p) => zipRead(bytes, ents, p);
+  B.xml = async (p) => { const b = p ? await B.raw(p) : null; return b ? new DOMParser().parseFromString(dec.decode(b), "application/xml") : null; };
+  B.rels = async (p) => {
+    const i = p.lastIndexOf("/"), d = await B.xml(p.slice(0, i + 1) + "_rels/" + p.slice(i + 1) + ".rels"), m = {};
+    xa(d, "Relationship").forEach((r) => { if (r.getAttribute("TargetMode") !== "External") m[r.getAttribute("Id")] = partPath(p, r.getAttribute("Target")); });
+    return m;
+  };
+  const wb = await B.xml("xl/workbook.xml"), wr = await B.rels("xl/workbook.xml");
+  if (!wb) throw new Error("Hindi mabasa ang Excel.");
+  B.sheets = {};
+  xa(wb, "sheet").forEach((s, i) => { B.sheets[s.getAttribute("name")] = { path: wr[xrid(s, "id")], idx: i }; });
+  B.areas = {};
+  xa(wb, "definedName").forEach((d) => { if (d.getAttribute("name") === "_xlnm.Print_Area" && d.hasAttribute("localSheetId")) B.areas[+d.getAttribute("localSheetId")] = d.textContent; });
+  const ss = await B.xml("xl/sharedStrings.xml");
+  B.sst = xa(ss, "si").map((si) => xa(si, "t").filter((t) => !(t.parentNode && t.parentNode.localName === "rPh")).map((t) => t.textContent).join(""));
+  const th = await B.xml("xl/theme/theme1.xml"), cs = x1(th, "clrScheme");
+  B.theme = [];
+  if (cs) for (const k of cs.children) {
+    const c = x1(k, "srgbClr"), sc = x1(k, "sysClr");
+    B.theme.push("#" + (c ? c.getAttribute("val") : sc ? sc.getAttribute("lastClr") || (sc.getAttribute("val") === "window" ? "FFFFFF" : "000000") : "000000"));
+  }
+  B.color = (el, d) => {
+    if (!el) return d;
+    if (el.hasAttribute("rgb")) return "#" + el.getAttribute("rgb").slice(-6);
+    if (el.hasAttribute("theme")) {
+      const map = [1, 0, 3, 2, 4, 5, 6, 7, 8, 9, 10, 11], c = B.theme[map[+el.getAttribute("theme")]] || d, t = +(el.getAttribute("tint") || 0);
+      return c && t ? tint(c, t) : c;
+    }
+    if (el.hasAttribute("indexed")) { const i = +el.getAttribute("indexed"); return i < 64 ? "#" + IDX_CLR[i] : d; }
+    return d;
+  };
+  const st = await B.xml("xl/styles.xml");
+  B.fmts = {};
+  xa(x1(st, "numFmts"), "numFmt").forEach((n) => { B.fmts[+n.getAttribute("numFmtId")] = n.getAttribute("formatCode"); });
+  const on = (f, t) => { const e = xkid(f, t); return !!e && e.getAttribute("val") !== "0" && e.getAttribute("val") !== "false" && e.getAttribute("val") !== "none"; };
+  B.fonts = xa(x1(st, "fonts"), "font").map((f) => ({
+    name: (xkid(f, "name") || xkid(f, "rFont") || { getAttribute: () => "Calibri" }).getAttribute("val") || "Calibri",
+    sz: +((xkid(f, "sz") || { getAttribute: () => 11 }).getAttribute("val") || 11),
+    b: on(f, "b"), i: on(f, "i"), u: on(f, "u"), color: B.color(xkid(f, "color"), "#000000"),
+  }));
+  B.fills = xa(x1(st, "fills"), "fill").map((f) => { const p = x1(f, "patternFill"); return p && p.getAttribute("patternType") === "solid" ? B.color(xkid(p, "fgColor"), null) : null; });
+  B.borders = xa(x1(st, "borders"), "border").map((b) => {
+    const o = {};
+    for (const [side, alt] of [["left", "start"], ["right", "end"], ["top", "top"], ["bottom", "bottom"]]) {
+      const e = xkid(b, side) || xkid(b, alt), s = e && e.getAttribute("style");
+      if (s && s !== "none") o[side] = { style: s, color: B.color(xkid(e, "color"), "#000000") };
+    }
+    return o;
+  });
+  B.xfs = xa(x1(st, "cellXfs"), "xf").map((x) => {
+    const a = xkid(x, "alignment");
+    return { fmt: +(x.getAttribute("numFmtId") || 0), font: +(x.getAttribute("fontId") || 0), fill: +(x.getAttribute("fillId") || 0), border: +(x.getAttribute("borderId") || 0),
+      h: (a && a.getAttribute("horizontal")) || "general", v: (a && a.getAttribute("vertical")) || "bottom",
+      wrap: xon(a, "wrapText", false), shrink: xon(a, "shrinkToFit", false), indent: a ? +(a.getAttribute("indent") || 0) : 0 };
+  });
+  return B;
+}
+async function sheetOpen(name) {
+  const B = SX.book;
+  if (B.cache[name]) return B.cache[name];
+  const info = B.sheets[name];
+  if (!info || !info.path) return null;
+  const doc = await B.xml(info.path);
+  const cols = [];
+  xa(doc, "col").forEach((c) => {
+    const w = c.hasAttribute("width") ? +c.getAttribute("width") : null, hid = xon(c, "hidden", false), s = c.hasAttribute("style") ? +c.getAttribute("style") : null;
+    for (let k = +c.getAttribute("min"); k <= +c.getAttribute("max") && k < 400; k++) cols[k] = { w, hid, s };
+  });
+  const sf = x1(doc, "sheetFormatPr");
+  const defH = sf && sf.hasAttribute("defaultRowHeight") ? +sf.getAttribute("defaultRowHeight") : 15;
+  const defW = sf && sf.hasAttribute("defaultColWidth") ? +sf.getAttribute("defaultColWidth") : (sf && sf.hasAttribute("baseColWidth") ? +sf.getAttribute("baseColWidth") : 8) + 0.71;
+  const rows = {}, cells = {};
+  for (const r of xa(doc, "row")) {
+    const rn = +r.getAttribute("r");
+    rows[rn] = { ht: r.hasAttribute("ht") ? +r.getAttribute("ht") : null, hid: xon(r, "hidden", false), s: xon(r, "customFormat", false) ? +(r.getAttribute("s") || 0) : null };
+    let cn = 0;
+    for (const c of r.children) {
+      if (c.localName !== "c") continue;
+      const ref = c.getAttribute("r"), p = ref ? refRC(ref) : { c: cn + 1, r: rn };
+      cn = p.c;
+      const t = c.getAttribute("t") || "n", ve = xkid(c, "v");
+      let v = null;
+      if (t === "s") v = ve ? SX.book.sst[+ve.textContent] : null;
+      else if (t === "inlineStr") v = xa(c, "t").map((x) => x.textContent).join("");
+      else if (t === "str" || t === "e") v = ve ? ve.textContent : null;
+      else if (t === "b") v = ve ? ve.textContent === "1" || ve.textContent === "true" : null;
+      else if (t === "d") v = ve ? (Date.parse(ve.textContent) / 86400000 + 25569) : null;
+      else v = ve && ve.textContent !== "" ? +ve.textContent : null;
+      cells[colLet(p.c) + p.r] = { v, t, s: c.hasAttribute("s") ? +c.getAttribute("s") : null };
+    }
+  }
+  const merges = xa(doc, "mergeCell").map((m) => rangeRC(m.getAttribute("ref"))).filter(Boolean);
+  const brks = xa(x1(doc, "rowBreaks"), "brk").map((b) => +b.getAttribute("id")).sort((a, b) => a - b);
+  const of = x1(doc, "oddFooter");
+  let objs = [];
+  const dr = x1(doc, "drawing");
+  if (dr) { const sr = await B.rels(info.path), path = sr[xrid(dr, "id")]; if (path) objs = await drawingOpen(path); }
+  const sh = { name, idx: info.idx, cols, defW, defH, rows, cells, merges, brks, footer: of ? of.textContent : "", objs };
+  B.cache[name] = sh;
+  return sh;
+}
+async function drawingOpen(path) {
+  const B = SX.book, doc = await B.xml(path), rels = await B.rels(path), out = [];
+  const pos = (el) => el ? { col: +(x1(el, "col") || {}).textContent || 0, colOff: +(x1(el, "colOff") || {}).textContent || 0, row: +(x1(el, "row") || {}).textContent || 0, rowOff: +(x1(el, "rowOff") || {}).textContent || 0 } : null;
+  for (const a of [...xa(doc, "oneCellAnchor"), ...xa(doc, "twoCellAnchor"), ...xa(doc, "absoluteAnchor")]) {
+    const ext = xkid(a, "ext"), o = { from: pos(xkid(a, "from")), to: pos(xkid(a, "to")), cx: ext ? +ext.getAttribute("cx") : 0, cy: ext ? +ext.getAttribute("cy") : 0 };
+    const pic = xkid(a, "pic"), gf = xkid(a, "graphicFrame");
+    if (pic) { const bl = x1(pic, "blip"), p = bl && rels[xrid(bl, "embed")]; if (p) out.push(Object.assign(o, { kind: "img", path: p })); }
+    else if (gf) { const ch = x1(gf, "chart"), p = ch && rels[xrid(ch, "id")]; if (p) out.push(Object.assign(o, { kind: "chart", path: p })); }
+  }
+  return out;
+}
+function cellXf(sh, c, r) {
+  const B = SX.book, cell = sh.cells[colLet(c) + r];
+  let s = cell && cell.s != null ? cell.s : null;
+  if (s == null && sh.rows[r] && sh.rows[r].s != null) s = sh.rows[r].s;
+  if (s == null && sh.cols[c] && sh.cols[c].s != null) s = sh.cols[c].s;
+  return B.xfs[s || 0] || B.xfs[0];
+}
+
+/* ---- number formats (what the cell shows) ---- */
+const FMT0 = { 0: "General", 1: "0", 2: "0.00", 3: "#,##0", 4: "#,##0.00", 9: "0%", 10: "0.00%", 14: "m/d/yyyy", 15: "d-mmm-yy", 16: "d-mmm", 17: "mmm-yy",
+  18: "h:mm AM/PM", 19: "h:mm:ss AM/PM", 20: "h:mm", 21: "h:mm:ss", 22: "m/d/yyyy h:mm", 37: "#,##0 ;(#,##0)", 38: "#,##0 ;[Red](#,##0)",
+  39: "#,##0.00;(#,##0.00)", 40: "#,##0.00;[Red](#,##0.00)", 45: "mm:ss", 46: "[h]:mm:ss", 47: "mm:ss.0", 49: "@" };
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const WDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const NAMED = { red: "#FF0000", blue: "#0000FF", green: "#008000", black: "#000000", white: "#FFFFFF", magenta: "#FF00FF", cyan: "#00FFFF", yellow: "#FFFF00" };
+function fmtSections(code) {
+  const out = []; let cur = "", q = false;
+  for (let i = 0; i < code.length; i++) {
+    const ch = code[i];
+    if (q) { cur += ch; if (ch === '"') q = false; continue; }
+    if (ch === "\\") { cur += ch + (code[i + 1] || ""); i++; continue; }
+    if (ch === '"') { q = true; cur += ch; continue; }
+    if (ch === ";") { out.push(cur); cur = ""; continue; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+function fmtTextSec(sec, v) {
+  let out = "";
+  for (let i = 0; i < sec.length; i++) {
+    const ch = sec[i];
+    if (ch === '"') { let j = sec.indexOf('"', i + 1); if (j < 0) j = sec.length; out += sec.slice(i + 1, j); i = j; continue; }
+    if (ch === "\\") { out += sec[i + 1] || ""; i++; continue; }
+    if (ch === "@") { out += v; continue; }
+    if (ch === "_") { out += " "; i++; continue; }
+    if (ch === "*") { i++; continue; }
+    if (ch === "[") { const j = sec.indexOf("]", i); i = j < 0 ? sec.length : j; continue; }
+    out += ch;
+  }
+  return out;
+}
+function fmtGeneral(v) {
+  if (Number.isInteger(v)) return String(v);
+  const s = String(+v.toPrecision(11));
+  return s.includes("e") ? v.toExponential(5) : s;
+}
+function fmtDateSec(v, sec) {
+  const d = new Date(Math.round((v - 25569) * 86400) * 1000);
+  const Y = d.getUTCFullYear(), M = d.getUTCMonth(), D = d.getUTCDate(), W = d.getUTCDay(), h = d.getUTCHours(), mi = d.getUTCMinutes(), se = d.getUTCSeconds();
+  const toks = [];
+  for (let i = 0; i < sec.length;) {
+    const ch = sec[i];
+    if (ch === '"') { const j = sec.indexOf('"', i + 1); toks.push({ lit: sec.slice(i + 1, j < 0 ? sec.length : j) }); i = j < 0 ? sec.length : j + 1; continue; }
+    if (ch === "\\") { toks.push({ lit: sec[i + 1] || "" }); i += 2; continue; }
+    if (ch === "[") { const j = sec.indexOf("]", i); i = j < 0 ? sec.length : j + 1; continue; }
+    if (sec.substr(i, 5).toUpperCase() === "AM/PM") { toks.push({ t: "ampm" }); i += 5; continue; }
+    if (sec.substr(i, 3).toUpperCase() === "A/P") { toks.push({ t: "ap" }); i += 3; continue; }
+    if (ch === "_") { toks.push({ lit: " " }); i += 2; continue; }
+    if (ch === "*") { i += 2; continue; }
+    const lc = ch.toLowerCase();
+    if ("ymdhs".includes(lc)) { let j = i; while (j < sec.length && sec[j].toLowerCase() === lc) j++; toks.push({ t: lc, n: j - i }); i = j; continue; }
+    toks.push({ lit: ch }); i++;
+  }
+  const ampm = toks.some((t) => t.t === "ampm" || t.t === "ap");
+  toks.forEach((t, k) => {
+    if (t.t !== "m") return;
+    let p = k - 1; while (p >= 0 && !toks[p].t) p--;
+    let n = k + 1; while (n < toks.length && !toks[n].t) n++;
+    if ((p >= 0 && toks[p].t === "h") || (n < toks.length && toks[n].t === "s")) t.t = "min";
+  });
+  const pad = (x, n) => String(x).padStart(n, "0");
+  let out = "";
+  for (const t of toks) {
+    if (!t.t) { out += t.lit; continue; }
+    if (t.t === "y") out += t.n <= 2 ? pad(Y % 100, 2) : Y;
+    else if (t.t === "m") out += t.n === 1 ? M + 1 : t.n === 2 ? pad(M + 1, 2) : t.n === 3 ? MONTHS[M].slice(0, 3) : t.n === 5 ? MONTHS[M][0] : MONTHS[M];
+    else if (t.t === "d") out += t.n === 1 ? D : t.n === 2 ? pad(D, 2) : t.n === 3 ? WDAYS[W].slice(0, 3) : WDAYS[W];
+    else if (t.t === "h") { let H = h; if (ampm) { H = h % 12; if (!H) H = 12; } out += t.n >= 2 ? pad(H, 2) : H; }
+    else if (t.t === "min") out += t.n >= 2 ? pad(mi, 2) : mi;
+    else if (t.t === "s") out += t.n >= 2 ? pad(se, 2) : se;
+    else if (t.t === "ampm") out += h < 12 ? "AM" : "PM";
+    else if (t.t === "ap") out += h < 12 ? "A" : "P";
+  }
+  return out;
+}
+function fmtNumSec(v, sec) {
+  let pre = "", post = "", pat = "", seen = false, done = false, pct = 0;
+  const lit = (s) => { if (seen) { post += s; done = true; } else pre += s; };
+  for (let i = 0; i < sec.length; i++) {
+    const ch = sec[i];
+    if (ch === '"') { let j = sec.indexOf('"', i + 1); if (j < 0) j = sec.length; lit(sec.slice(i + 1, j)); i = j; continue; }
+    if (ch === "\\") { lit(sec[i + 1] || ""); i++; continue; }
+    if (ch === "_") { lit(" "); i++; continue; }
+    if (ch === "*") { i++; continue; }
+    if (ch === "@") { lit(""); continue; }
+    if ("0#?.,".includes(ch) && !done) { pat += ch; seen = true; continue; }
+    if (ch === "%") { pct++; lit("%"); continue; }
+    lit(ch);
+  }
+  if (!seen) return pre + post;
+  let x = v * Math.pow(100, pct), p = pat;
+  while (p.endsWith(",")) { x /= 1000; p = p.slice(0, -1); }
+  const dot = p.indexOf("."), ipat = dot >= 0 ? p.slice(0, dot) : p, dpat = dot >= 0 ? p.slice(dot + 1).replace(/,/g, "") : "";
+  const dmin = (dpat.match(/0/g) || []).length, dmax = dpat.length, f = Math.pow(10, dmax);
+  let [ip, dp = ""] = (Math.round((x + 1e-9) * f) / f).toFixed(dmax).split(".");
+  while (dp.length > dmin && dp.endsWith("0")) dp = dp.slice(0, -1);
+  const imin = (ipat.match(/0/g) || []).length;
+  if (ip === "0" && imin === 0) ip = "";
+  while (ip.length < imin) ip = "0" + ip;
+  if (ipat.includes(",")) ip = ip.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return pre + ip + (dp ? "." + dp : "") + post;
+}
+function cellText(v, code) {
+  if (v == null || v === "") return { text: "" };
+  if (typeof v === "boolean") return { text: v ? "TRUE" : "FALSE" };
+  if (typeof v === "string") {
+    const secs = code && code !== "General" ? fmtSections(code) : [];
+    const tsec = secs.length === 4 ? secs[3] : secs.length === 1 && secs[0].includes("@") ? secs[0] : null;
+    return { text: tsec ? fmtTextSec(tsec, v) : v };
+  }
+  if (!code || code === "General") return { text: fmtGeneral(v) };
+  let secs = fmtSections(code), sec = null, val = v, neg = false;
+  const conds = secs.map((s) => { const m = /\[(<=|>=|<>|<|>|=)(-?[\d.]+)\]/.exec(s); return m ? { op: m[1], n: +m[2] } : null; });
+  if (conds.some(Boolean)) {
+    const ok = (c) => c.op === "=" ? v === c.n : c.op === "<" ? v < c.n : c.op === ">" ? v > c.n : c.op === "<=" ? v <= c.n : c.op === ">=" ? v >= c.n : v !== c.n;
+    const i = conds.findIndex((c) => c && ok(c));
+    sec = i >= 0 ? secs[i] : secs[conds.findIndex((c) => !c)] || secs[secs.length - 1];
+  } else if (secs.length === 1) { sec = secs[0]; neg = v < 0; val = Math.abs(v); }
+  else if (v > 0 || (v === 0 && secs.length === 2)) sec = secs[0];
+  else if (v < 0) { sec = secs[1]; val = Math.abs(v); }
+  else sec = secs[2] != null ? secs[2] : secs[0];
+  let color = null;
+  sec = sec.replace(/\[([^\]]*)\]/g, (m, inner) => {
+    const k = inner.toLowerCase();
+    if (NAMED[k]) { color = NAMED[k]; return ""; }
+    const cur = /^\$([^-]*)-/.exec(inner); if (cur) return cur[1] ? '"' + cur[1] + '"' : "";
+    return /^(h|hh|m|mm|s|ss)$/i.test(inner) ? inner : "";
+  });
+  const bare = sec.replace(/"[^"]*"/g, "").replace(/\\./g, "");
+  const isDate = /[ydhs]/i.test(bare) || (/m/i.test(bare) && !/[0#?]/.test(bare));
+  let text = isDate ? fmtDateSec(val, sec) : fmtNumSec(val, sec);
+  if (neg && !isDate && text !== "") text = "-" + text;
+  return { text, color };
+}
+
+/* ---- drawing one page of a slip ---- */
+const PT = 4 / 3, PAD = 3, EMU = 9525;
+const FAM = (n) => /times|georgia|serif/i.test(n) && !/sans/i.test(n) ? "'Times New Roman','Liberation Serif','Noto Serif',Georgia,serif"
+  : /calibri/i.test(n) ? "Calibri,Carlito,Roboto,Arial,sans-serif" : "Arial,'Liberation Sans',Roboto,'Helvetica Neue',sans-serif";
+const fontCss = (f, k) => (f.i ? "italic " : "") + (f.b ? "bold " : "") + (f.sz * PT * (k || 1)).toFixed(2) + "px " + FAM(f.name);
+function printArea(sh) {
+  const t = SX.book.areas[sh.idx] || "";
+  const m = /OFFSET\(\s*'?([^'!]+)'?!\$?([A-Z]+)\$?(\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*'?([^'!]+)'?!\$?([A-Z]+)\$?(\d+)\s*,\s*(\d+)\s*\)/.exec(t);
+  if (m) {
+    const hc = sh.cells[m[7] + m[8]], h = Math.max(1, Math.round(+(hc && hc.v) || 1));
+    const c1 = colNum(m[2]) + +m[5], r1 = +m[3] + +m[4];
+    return { c1, r1, c2: c1 + +m[9] - 1, r2: r1 + h - 1 };
+  }
+  const s = /!\$?([A-Z]+)\$?(\d+):\$?([A-Z]+)\$?(\d+)/.exec(t);
+  if (s) return { c1: colNum(s[1]), r1: +s[2], c2: colNum(s[3]), r2: +s[4] };
+  let c2 = 1, r2 = 1;
+  for (const ref of Object.keys(sh.cells)) { const p = refRC(ref); if (sh.cells[ref].v != null && sh.cells[ref].v !== "") { c2 = Math.max(c2, p.c); r2 = Math.max(r2, p.r); } }
+  return { c1: 1, r1: 1, c2, r2 };
+}
+const colPx = (sh, c) => { const k = sh.cols[c]; if (k && k.hid) return 0; const w = k && k.w != null ? k.w : sh.defW; return Math.round(w * 7 + 5); };
+const rowPx = (sh, r) => { const k = sh.rows[r]; if (k && k.hid) return 0; return (k && k.ht != null ? k.ht : sh.defH) * PT; };
+function wrapLines(ctx, text, maxW) {
+  const out = [];
+  for (const para of String(text).split(/\r?\n/)) {
+    let line = "";
+    for (const w of para.split(/(\s+)/)) {
+      if (!w) continue;
+      const t = line + w;
+      if (!line.trim() || ctx.measureText(t.trimEnd()).width <= maxW) { line = t; continue; }
+      out.push(line.trimEnd()); line = w.trimStart();
+      while (line.length > 1 && ctx.measureText(line).width > maxW) {
+        let k = line.length - 1; while (k > 1 && ctx.measureText(line.slice(0, k)).width > maxW) k--;
+        out.push(line.slice(0, k)); line = line.slice(k);
+      }
+    }
+    out.push(line.trimEnd());
+  }
+  return out;
+}
+function strokeEdge(ctx, b, x1, y1, x2, y2) {
+  if (!b) return;
+  const w = { hair: 0.6, thin: 1, medium: 2, thick: 3, double: 1, dashed: 1, dotted: 1, mediumDashed: 2, dashDot: 1, mediumDashDot: 2, dashDotDot: 1, mediumDashDotDot: 2, slantDashDot: 2 }[b.style] || 1;
+  ctx.save(); ctx.strokeStyle = b.color || "#000"; ctx.lineWidth = w;
+  ctx.setLineDash(/dot/i.test(b.style) && !/dash/i.test(b.style) ? [1, 2] : /dash/i.test(b.style) ? [4, 2] : []);
+  const line = (a, c, d, e) => { ctx.beginPath(); ctx.moveTo(a, c); ctx.lineTo(d, e); ctx.stroke(); };
+  if (b.style === "double") {
+    if (y1 === y2) { line(x1, y1 - 1, x2, y2 - 1); line(x1, y1 + 1, x2, y2 + 1); } else { line(x1 - 1, y1, x2 - 1, y2); line(x1 + 1, y1, x2 + 1, y2); }
+  } else line(x1, y1, x2, y2);
+  ctx.restore();
+}
+async function imgOf(path) {
+  const B = SX.book;
+  if (!(path in B.imgs)) {
+    const b = await B.raw(path);
+    B.imgs[path] = null;
+    if (b) {
+      const type = /\.png$/i.test(path) ? "image/png" : /\.gif$/i.test(path) ? "image/gif" : "image/jpeg";
+      try { B.imgs[path] = await createImageBitmap(new Blob([b], { type })); } catch (_) { B.imgs[path] = null; }
+    }
+  }
+  return B.imgs[path];
+}
+async function rangeValues(f) {
+  const m = /^'?(.+?)'?!\$?([A-Z]+)\$?(\d+)(?::\$?([A-Z]+)\$?(\d+))?$/.exec(String(f).trim());
+  if (!m) return [];
+  const sh = await sheetOpen(m[1].replace(/''/g, "'"));
+  if (!sh) return [];
+  const out = [], c1 = colNum(m[2]), r1 = +m[3], c2 = m[4] ? colNum(m[4]) : c1, r2 = m[5] ? +m[5] : r1;
+  for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) {
+    const cell = sh.cells[colLet(c) + r], xf = cellXf(sh, c, r);
+    out.push({ v: cell ? cell.v : null, text: cell ? cellText(cell.v, SX.book.fmts[xf.fmt] || FMT0[xf.fmt] || "General").text : "" });
+  }
+  return out;
+}
+async function chartOf(path) {
+  const B = SX.book;
+  if (B.charts[path]) return B.charts[path];
+  const doc = await B.xml(path), sers = [];
+  for (const s of xa(doc, "ser")) {
+    const tx = xkid(s, "tx"), v = tx && x1(tx, "v"), f = tx && x1(tx, "f"), sp = xkid(s, "spPr"), clr = sp && x1(x1(sp, "solidFill"), "srgbClr");
+    const catF = x1(xkid(s, "cat"), "f"), valF = x1(xkid(s, "val"), "f");
+    sers.push({
+      name: v ? v.textContent : f ? ((await rangeValues(f.textContent))[0] || {}).text || "" : "",
+      color: clr ? "#" + clr.getAttribute("val") : null,
+      cats: catF ? (await rangeValues(catF.textContent)).map((x) => x.text) : xa(xkid(s, "cat"), "v").map((x) => x.textContent),
+      vals: valF ? (await rangeValues(valF.textContent)).map((x) => (typeof x.v === "number" ? x.v : null)) : xa(xkid(s, "val"), "v").map((x) => +x.textContent),
+    });
+  }
+  const gap = x1(doc, "gapWidth"), va = x1(doc, "valAx"), nf = va && xkid(va, "numFmt"), lp = x1(doc, "legendPos");
+  B.charts[path] = { sers, gap: gap ? +gap.getAttribute("val") : 150, fmt: nf ? nf.getAttribute("formatCode") : "General", legend: lp ? lp.getAttribute("val") : (x1(doc, "legend") ? "r" : null) };
+  return B.charts[path];
+}
+function drawChart(ctx, ch, x, y, w, h) {
+  const PALETTE = ["#1F5FAE", "#C9922E", "#1E7B34", "#B42318", "#6B7280"];
+  ctx.save();
+  ctx.fillStyle = "#FFFFFF"; ctx.fillRect(x, y, w, h);
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  const sers = ch.sers, top = y + 6;
+  let ly = top;
+  if (ch.legend) {
+    ctx.font = "10.5px Arial,'Liberation Sans',Roboto,sans-serif"; ctx.textBaseline = "middle";
+    const items = sers.map((s, i) => ({ s, i, w: 14 + ctx.measureText(s.name).width + 14 }));
+    let lx = x + (w - items.reduce((a, b) => a + b.w, 0)) / 2;
+    for (const it of items) {
+      ctx.fillStyle = it.s.color || PALETTE[it.i % PALETTE.length]; ctx.fillRect(lx, ly + 3, 8, 8);
+      ctx.fillStyle = "#374151"; ctx.fillText(it.s.name, lx + 12, ly + 7); lx += it.w;
+    }
+    ly += 18;
+  }
+  const n = Math.max(0, ...sers.map((s) => s.vals.length));
+  const vals = sers.flatMap((s) => s.vals).filter((v) => typeof v === "number");
+  const vmax = vals.length ? Math.max(...vals, 0) : 0;
+  const raw = vmax > 0 ? vmax / 5 : 1, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((k) => k >= raw) || raw;
+  const top2 = Math.max(step, Math.ceil(vmax / step) * step);
+  ctx.font = "10px Arial,'Liberation Sans',Roboto,sans-serif";
+  const lab = (v) => cellText(v, ch.fmt).text;
+  let aw = 0; for (let v = 0; v <= top2 + 1e-9; v += step) aw = Math.max(aw, ctx.measureText(lab(v)).width);
+  const px = x + aw + 10, pw = x + w - 6 - px, py = ly + 4, ph = y + h - 22 - py;
+  ctx.textBaseline = "middle"; ctx.textAlign = "right";
+  for (let v = 0; v <= top2 + 1e-9; v += step) {
+    const yy = py + ph - (v / top2) * ph;
+    ctx.strokeStyle = "#E5E7EB"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px, yy); ctx.lineTo(px + pw, yy); ctx.stroke();
+    ctx.fillStyle = "#6B7280"; ctx.fillText(lab(v), px - 4, yy);
+  }
+  ctx.strokeStyle = "#9CA3AF"; ctx.beginPath(); ctx.moveTo(px, py + ph); ctx.lineTo(px + pw, py + ph); ctx.stroke();
+  if (n) {
+    const slot = pw / n, bw = slot / (sers.length + ch.gap / 100);
+    ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.font = "bold 11px Arial,'Liberation Sans',Roboto,sans-serif";
+    for (let i = 0; i < n; i++) {
+      const sx = px + i * slot + (slot - bw * sers.length) / 2;
+      sers.forEach((s, k) => {
+        const v = s.vals[i]; if (typeof v !== "number" || v <= 0) return;
+        const bh = (v / top2) * ph; ctx.fillStyle = s.color || PALETTE[k % PALETTE.length];
+        ctx.fillRect(sx + k * bw, py + ph - bh, Math.max(1, bw - 1), bh);
+      });
+      ctx.fillStyle = "#374151"; ctx.fillText(String(sers[0].cats[i] || ""), px + i * slot + slot / 2, py + ph + 4);
+    }
+  }
+  ctx.restore();
+}
+function footerParts(s) {
+  const out = { L: "", C: "", R: "", size: 8 };
+  let sec = "C";
+  for (let i = 0; i < s.length;) {
+    if (s[i] === "&") {
+      const n = s[i + 1] || "";
+      if ("LCR".includes(n) && n) { sec = n; i += 2; continue; }
+      if (n === "P") { out[sec] += "\u0001"; i += 2; continue; }
+      if (n === "N") { out[sec] += "\u0002"; i += 2; continue; }
+      if (n === "&") { out[sec] += "&"; i += 2; continue; }
+      if (n === '"') { const j = s.indexOf('"', i + 2); i = j < 0 ? s.length : j + 1; continue; }
+      if (/\d/.test(n)) { let j = i + 1; while (/\d/.test(s[j] || "")) j++; out.size = +s.slice(i + 1, j); i = j; continue; }
+      i += 2; continue;
+    }
+    out[sec] += s[i]; i++;
+  }
+  return out;
+}
+async function slipPages(sheetName) {
+  const sh = await sheetOpen(sheetName);
+  if (!sh) throw new Error("Wala sa Excel ang " + sheetName + ".");
+  const A = printArea(sh), B = SX.book;
+  const pages = [];
+  let s = A.r1;
+  for (const b of sh.brks) if (b >= s && b < A.r2) { pages.push([s, b]); s = b + 1; }
+  pages.push([s, A.r2]);
+  const cols = []; for (let c = A.c1; c <= A.c2; c++) cols.push(c);
+  const cx = {}, cw = {}; let W = 0;
+  for (const c of cols) { cx[c] = W; cw[c] = colPx(sh, c); W += cw[c]; }
+  const allColX = (c) => { let x = 0; if (c >= A.c1) { for (let k = A.c1; k < c; k++) x += colPx(sh, k); } else { for (let k = c; k < A.c1; k++) x -= colPx(sh, k); } return x; };
+  const out = [];
+  for (let pi = 0; pi < pages.length; pi++) {
+    const [ra, rb] = pages[pi];
+    const ry = {}, rh = {}; let H = 0;
+    for (let r = ra; r <= rb; r++) { ry[r] = H; rh[r] = rowPx(sh, r); H += rh[r]; }
+    const allRowY = (r) => { let y = 0; if (r >= ra) { for (let k = ra; k < r; k++) y += rowPx(sh, k); } else { for (let k = r; k < ra; k++) y -= rowPx(sh, k); } return y; };
+    const ft = footerParts(sh.footer || ""), fh = ft.L || ft.C || ft.R ? 26 : 0, M = 18;
+    const k = Math.min(3, Math.max(2, 1250 / (W + 2 * M)));
+    const cv = document.createElement("canvas");
+    cv.width = Math.round((W + 2 * M) * k); cv.height = Math.round((H + 2 * M + fh) * k);
+    const ctx = cv.getContext("2d");
+    ctx.scale(k, k); ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W + 2 * M, H + 2 * M + fh);
+    ctx.translate(M, M);
+    // merged areas on this page
+    const top = {}, covered = {};
+    for (const m of sh.merges) {
+      if (m.r2 < ra || m.r1 > rb || m.c2 < A.c1 || m.c1 > A.c2) continue;
+      top[m.c1 + "," + m.r1] = m;
+      for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) if (r !== m.r1 || c !== m.c1) covered[c + "," + r] = m;
+    }
+    const rectOf = (c, r) => {
+      const m = top[c + "," + r];
+      if (!m) return { x: cx[c], y: ry[r], w: cw[c], h: rh[r] };
+      let w = 0, h = 0;
+      for (let q = Math.max(m.c1, A.c1); q <= Math.min(m.c2, A.c2); q++) w += cw[q];
+      for (let q = Math.max(m.r1, ra); q <= Math.min(m.r2, rb); q++) h += rh[q];
+      return { x: cx[Math.max(m.c1, A.c1)], y: ry[Math.max(m.r1, ra)], w, h };
+    };
+    // 1. fills
+    for (let r = ra; r <= rb; r++) for (const c of cols) {
+      if (covered[c + "," + r] || !rh[r] || !cw[c]) continue;
+      const xf = cellXf(sh, c, r), fill = B.fills[xf.fill];
+      if (!fill) continue;
+      const R = rectOf(c, r); ctx.fillStyle = fill; ctx.fillRect(R.x, R.y, R.w + 0.5, R.h + 0.5);
+    }
+    // 2. borders (each cell draws its own edges; inside a merged area only the outer edges show, as in Excel)
+    for (let r = ra; r <= rb; r++) for (const c of cols) {
+      if (!rh[r] || !cw[c]) continue;
+      const bd = B.borders[cellXf(sh, c, r).border]; if (!bd) continue;
+      const m = covered[c + "," + r] || top[c + "," + r];
+      const x0 = cx[c], y0 = ry[r], x2 = x0 + cw[c], y2 = y0 + rh[r];
+      if (!m || r === m.r1) strokeEdge(ctx, bd.top, x0, y0, x2, y0);
+      if (!m || r === m.r2) strokeEdge(ctx, bd.bottom, x0, y2, x2, y2);
+      if (!m || c === m.c1) strokeEdge(ctx, bd.left, x0, y0, x0, y2);
+      if (!m || c === m.c2) strokeEdge(ctx, bd.right, x2, y0, x2, y2);
+    }
+    // 3. text
+    const filled = (c, r) => { const cell = sh.cells[colLet(c) + r]; return (cell && cell.v != null && cell.v !== "") || covered[c + "," + r] || top[c + "," + r]; };
+    for (let r = ra; r <= rb; r++) for (const c of cols) {
+      if (covered[c + "," + r] || !rh[r]) continue;
+      const cell = sh.cells[colLet(c) + r];
+      if (!cell || cell.v == null || cell.v === "") continue;
+      const xf = cellXf(sh, c, r), font = B.fonts[xf.font] || B.fonts[0];
+      const shown = cellText(cell.v, B.fmts[xf.fmt] || FMT0[xf.fmt] || "General");
+      if (!shown.text) continue;
+      const R = rectOf(c, r);
+      let h = xf.h;
+      if (h === "general") h = typeof cell.v === "number" ? "right" : typeof cell.v === "boolean" ? "center" : "left";
+      if (h === "centerContinuous" || h === "distributed") h = "center";
+      if (h === "fill" || h === "justify") h = "left";
+      let scale = 1;
+      ctx.font = fontCss(font);
+      const ind = xf.indent * 9;
+      let avail = R.w - 2 * PAD - ind;
+      let lines = xf.wrap ? wrapLines(ctx, shown.text, Math.max(8, avail)) : [shown.text.replace(/\r?\n/g, " ")];
+      let clip = { x: R.x, w: R.w };
+      if (!xf.wrap) {
+        const tw = ctx.measureText(lines[0]).width;
+        if (xf.shrink && tw > avail) { scale = Math.max(0.5, avail / tw); ctx.font = fontCss(font, scale); }
+        else if (tw > avail && !top[c + "," + r]) {
+          let L = R.x, Rr = R.x + R.w, need = tw - avail;
+          if (h === "left") { for (let q = c + 1; q <= A.c2 && need > 0 && !filled(q, r); q++) { Rr += cw[q]; need -= cw[q]; } }
+          else if (h === "right") { for (let q = c - 1; q >= A.c1 && need > 0 && !filled(q, r); q--) { L -= cw[q]; need -= cw[q]; } }
+          else { for (let q = 1; need > 0; q++) { const okL = c - q >= A.c1 && !filled(c - q, r), okR = c + q <= A.c2 && !filled(c + q, r); if (!okL || !okR) break; L -= cw[c - q]; Rr += cw[c + q]; need -= cw[c - q] + cw[c + q]; } }
+          clip = { x: L, w: Rr - L };
+        }
+      }
+      const px = font.sz * PT * scale, lh = px * 1.18, asc = px * 0.78, desc = px * 0.22;
+      const blockH = lines.length * lh - (lh - px);
+      let y0;
+      if (xf.v === "top") y0 = R.y + PAD - 1;
+      else if (xf.v === "center" || xf.v === "distributed" || xf.v === "justify") y0 = R.y + (R.h - blockH) / 2;
+      else y0 = R.y + R.h - PAD + 1 - blockH;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(clip.x, R.y, clip.w, R.h); ctx.clip();
+      ctx.fillStyle = shown.color || font.color || "#000000"; ctx.textBaseline = "alphabetic";
+      lines.forEach((ln, i) => {
+        const tw = ctx.measureText(ln).width, base = y0 + i * lh + asc + (px - asc - desc) / 2;
+        let tx;
+        if (h === "right") { ctx.textAlign = "right"; tx = R.x + R.w - PAD - ind; }
+        else if (h === "center") { ctx.textAlign = "center"; tx = R.x + R.w / 2; }
+        else { ctx.textAlign = "left"; tx = R.x + PAD + ind; }
+        ctx.fillText(ln, tx, base);
+        if (font.u) { const ux = h === "right" ? tx - tw : h === "center" ? tx - tw / 2 : tx; ctx.fillRect(ux, base + 1.5, tw, Math.max(0.8, px / 14)); }
+      });
+      ctx.restore();
+    }
+    // 4. pictures and charts
+    for (const o of sh.objs) {
+      if (!o.from) continue;
+      const x = allColX(o.from.col + 1) + o.from.colOff / EMU, y = allRowY(o.from.row + 1) + o.from.rowOff / EMU;
+      let w = o.cx / EMU, hgt = o.cy / EMU;
+      if (o.to) { w = allColX(o.to.col + 1) + o.to.colOff / EMU - x; hgt = allRowY(o.to.row + 1) + o.to.rowOff / EMU - y; }
+      if (y + hgt <= 0 || y >= H || w <= 0 || hgt <= 0) continue;
+      if (o.kind === "img") { const im = await imgOf(o.path); if (im) ctx.drawImage(im, x, y, w, hgt); }
+      else { try { drawChart(ctx, await chartOf(o.path), x, y, w, hgt); } catch (_) {} }
+    }
+    // 5. page footer
+    if (fh) {
+      const fy = H + M - 4, fpx = Math.max(9, ft.size * PT * 1.15);
+      const sub = (t) => t.replace(/\u0001/g, String(pi + 1)).replace(/\u0002/g, String(pages.length)).trim();
+      ctx.font = fpx.toFixed(1) + "px Arial,'Liberation Sans',Roboto,sans-serif"; ctx.fillStyle = "#374151"; ctx.textBaseline = "alphabetic";
+      if (ft.L) { ctx.textAlign = "left"; ctx.fillText(sub(ft.L), 0, fy); }
+      if (ft.C) { ctx.textAlign = "center"; ctx.fillText(sub(ft.C), W / 2, fy); }
+      if (ft.R) { ctx.textAlign = "right"; ctx.fillText(sub(ft.R), W, fy); }
+    }
+    out.push(cv);
+  }
+  return out;
+}
+
+/* ---- which slips the Excel holds ---- */
+const sheetPick = (...names) => names.find((n) => SX.book.sheets[n]);
+async function cellV(sheet, ref) { const sh = await sheetOpen(sheet); const c = sh && sh.cells[ref]; return c ? c.v : null; }
+const serialDate = (v) => (typeof v === "number" && v > 0 ? new Date(Math.round((v - 25569) * 86400000)) : null);
+const MON3 = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const dTag = (d) => (d ? MON3[d.getUTCMonth()] + " " + d.getUTCDate() + " " + d.getUTCFullYear() : "");
+const pTag = (a, b) => (!a || !b ? dTag(a || b) : a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear()
+  ? MON3[a.getUTCMonth()] + " " + a.getUTCDate() + "-" + b.getUTCDate() + " " + a.getUTCFullYear()
+  : MON3[a.getUTCMonth()] + " " + a.getUTCDate() + "-" + MON3[b.getUTCMonth()] + " " + b.getUTCDate() + " " + b.getUTCFullYear());
+const MONW = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pWords = (a, b) => a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear()
+  ? MONW[a.getUTCMonth()] + " " + a.getUTCDate() + "–" + b.getUTCDate() + ", " + a.getUTCFullYear()
+  : MONW[a.getUTCMonth()] + " " + a.getUTCDate() + " – " + MONW[b.getUTCMonth()] + " " + b.getUTCDate() + ", " + b.getUTCFullYear();
+const fileSafe = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[.,]/g, "").replace(/[^A-Za-z0-9 \-]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
+const properW = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+const firstName = (n) => {
+  const t = String(n || "").trim().split(/\s+/);
+  if (/^MA\.?$/i.test(t[0] || "") && t[1]) return "Ma " + properW(t[1]);
+  return (t[0] || "").length <= 2 ? (t[0] || "") : properW(t[0]);
+};
+async function slipList() {
+  const B = SX.book, out = [];
+  for (let k = 1; k <= 30; k++) {
+    const n = "SLIP " + String(k).padStart(2, "0"); if (!B.sheets[n]) continue;
+    const who = String((await cellV(n, "J3")) || "");
+    if (!who.includes("|")) continue;
+    const name = who.split("|").slice(1).join("|").trim();
+    const a = serialDate(await cellV(n, "J6")), b = serialDate(await cellV(n, "J7"));
+    out.push({ kind: "B", sheet: n, name, file: "RT SLIP " + fileSafe(name) + " " + pTag(a, b), text: "Magandang araw, " + firstName(name) + "! Narito ang slip mo" + (a && b ? " para sa " + pWords(a, b) : "") + ". — RT LENDING CORP." });
+  }
+  for (let k = 1; k <= 10; k++) {
+    const n = "INV SLIP " + String(k).padStart(2, "0"); if (!B.sheets[n]) continue;
+    const name = String((await cellV(n, "K4")) || "").trim(); if (!name) continue;
+    const no = String((await cellV(n, "K13")) || "");
+    const d = /(\d{2})(\d{2})(\d{2})/.exec(no), when = d ? MON3[+d[2] - 1] + " " + +d[3] + " 20" + d[1] : "";
+    out.push({ kind: "I", sheet: n, name, file: "RT INVESTOR SLIP " + fileSafe(name) + (when ? " " + when : ""), text: "Magandang araw, " + firstName(name) + "! Narito ang investor statement mo. — RT LENDING CORP." });
+  }
+  const ap = sheetPick("AGENT PAY SLIP", "TAGA-WITHDRAW SLIP");
+  if (ap) {
+    const name = String((await cellV(ap, "J3")) || "").trim(), no = String((await cellV(ap, "J7")) || "");
+    const d = /(\d{2})(\d{2})(\d{2})/.exec(no), when = d ? MON3[+d[2] - 1] + " " + +d[3] + " 20" + d[1] : "";
+    if (name) out.push({ kind: "W", sheet: ap, name, file: "RT AGENT PAY SLIP " + fileSafe(name) + (when ? " " + when : ""), text: "Magandang araw, " + firstName(name) + "! Narito ang pay slip mo. — RT LENDING CORP." });
+  }
+  const ws = sheetPick("WITHDRAWAL SLIP", "WITHDRAW SLIP");
+  if (ws) {
+    const name = String((await cellV(ws, "E12")) || "").trim(), cnt = +(await cellV(ws, "L3")) || 0, no = String((await cellV(ws, "L8")) || "");
+    const d = /(\d{2})(\d{2})(\d{2})/.exec(no), when = d ? MON3[+d[2] - 1] + " " + +d[3] + " 20" + d[1] : "";
+    if (name) out.push({ kind: "WD", sheet: ws, name, count: cnt, file: "RT WITHDRAWAL SLIP " + fileSafe(name) + (when ? " " + when : ""), text: "Magandang araw, " + firstName(name) + "! Narito ang withdrawal slip. Ibalik sa RT LENDING CORP. ang lahat ng ATM card, pera at resibo. — RT LENDING CORP." });
+  }
+  return out;
+}
+async function slipFiles(it) {
+  const pages = await slipPages(it.sheet), files = [];
+  for (let i = 0; i < pages.length; i++) {
+    const blob = await new Promise((res) => pages[i].toBlob(res, "image/jpeg", 0.9));
+    files.push(new File([blob], it.file + (pages.length > 1 ? " P" + (i + 1) : "") + ".jpg", { type: "image/jpeg" }));
+  }
+  return files;
+}
+function saveFiles(files) {
+  files.forEach((f, i) => setTimeout(() => {
+    const u = URL.createObjectURL(f), a = document.createElement("a");
+    a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 4000);
+  }, i * 700));
+}
+async function slipsLoad() {
+  if (!SX.bytes) return;
+  if (!SX.book) SX.book = await bookOpen(SX.bytes);
+  if (!SX.list) SX.list = await slipList();
+}
+function slipsHTML() {
+  if (!SX.bytes) return '<p class="muted">Piliin muna ang Excel sa <b>1 · Excel</b>. Lalabas dito ang slip ng bawat isa.</p>';
+  if (!SX.list) return '<p class="muted">Binabasa ang mga slip…</p>';
+  if (!SX.list.length) return '<p class="muted">Walang slip na nakita sa Excel na ito.</p>';
+  const grp = { B: "Borrowers", I: "Investors", W: "Taga-withdraw", WD: "Taga-withdraw" }, seen = {};
+  let h = "";
+  SX.list.forEach((it, i) => {
+    const g = it.kind === "WD" ? "W" : it.kind;
+    if (!seen[g]) { seen[g] = 1; h += '<h3 class="slg">' + grp[g] + "</h3>"; }
+    const what = it.kind === "B" ? "Slip" : it.kind === "I" ? "Investor statement" : it.kind === "W" ? "Pay slip" : "Withdrawal slip · may PIN, para lang sa taga-withdraw" + (it.count ? "" : " · walang napili sa WITHDRAWALS");
+    h += '<div class="slr"><div class="sln"><b>' + E(it.name) + '</b><span class="muted">' + E(what) + "</span></div>" +
+      '<div class="slb"><button class="btn pri" data-sl="' + i + '" data-a="send"' + (it.kind === "WD" && !it.count ? " disabled" : "") + '>IPADALA KAY ' + E(firstName(it.name).toUpperCase()) + '</button>' +
+      '<button class="btn lite" data-sl="' + i + '" data-a="save"' + (it.kind === "WD" && !it.count ? " disabled" : "") + '>I-SAVE ANG JPEG</button></div></div>';
+  });
+  return h;
+}
+async function slipsBind() {
+  const box = document.getElementById("sl");
+  if (!box) return;
+  if (SX.bytes && !SX.list) {
+    try { await slipsLoad(); } catch (err) { box.innerHTML = '<p class="bad">' + E(err.message || err) + "</p>"; return; }
+    const again = document.getElementById("sl"); if (again) again.innerHTML = slipsHTML();
+  }
+  const el = document.getElementById("sl");
+  if (!el || el.dataset.bound) return;
+  el.dataset.bound = "1";
+  el.addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-sl]");
+    if (!b || SX.busy) return;
+    const it = SX.list[+b.dataset.sl], msg = document.getElementById("slm"), was = b.textContent;
+    SX.busy = true; b.disabled = true; b.textContent = "Ginagawa…";
+    try {
+      const files = SX.files[b.dataset.sl] || (SX.files[b.dataset.sl] = await slipFiles(it));
+      if (b.dataset.a === "send" && navigator.canShare && navigator.canShare({ files })) {
+        try { await navigator.share({ files, text: it.text }); msg.innerHTML = '<span class="ok">Naipadala ang slip ni ' + E(it.name) + ".</span>"; }
+        catch (err) {
+          if (err && err.name === "AbortError") msg.textContent = "Hindi itinuloy ang pagpapadala.";
+          else if (err && err.name === "NotAllowedError") msg.innerHTML = '<span class="wait">Handa na ang slip ni ' + E(it.name) + ". I-tap ulit ang IPADALA.</span>";
+          else throw err;
+        }
+      } else {
+        saveFiles(files);
+        msg.innerHTML = '<span class="ok">Na-save sa Downloads: ' + E(files.map((f) => f.name).join(", ")) + "</span>" + (b.dataset.a === "send" ? " Ipadala ito sa Messenger ni " + E(firstName(it.name)) + "." : "");
+      }
+    } catch (err) { msg.innerHTML = '<span class="bad">' + E(err.message || String(err)) + "</span>"; }
+    finally { SX.busy = false; b.disabled = false; b.textContent = was; }
+  });
+}
+/* SLIPS:END */
+function bind() {
+  $("#xl").onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return; $("#xlm").textContent = "Binabasa ang Excel…";
+    try {
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      const X = readExcel(bytes);
+      SX.bytes = bytes; SX.book = null; SX.list = null; SX.files = {};
+      Object.keys(ST.accounts).forEach((k) => { if (!X.accts[k]) X.accts[k] = Object.assign({}, ST.accounts[k], { status: "WALA NA SA EXCEL" }); });
+      ST.views = X.views;
+      ST.accounts = X.accts; ST.co = { name: X.set.co, tagline: X.set.tagline, pay: X.set.pay }; ST.asof = X.set.asof; ST.period = X.set.activeLbl; ST.excelAt = Date.now();
+      await refreshLinks();
+      const r = merge(X); await draft();
+      const n = Object.values(X.accts).filter(listed);
+      const nokey = X.views.filter((w) => !w.ok && (!X.accts[w.akey] || listed(X.accts[w.akey]))).map((w) => w.name);
+      MSG = "Nabasa: " + n.filter((a) => a.type === "B").length + " borrowers, " + n.filter((a) => a.type === "I").length + " investors, " + n.filter((a) => a.type === "W").length + " taga-withdraw (as of " + RT.dLabel(X.set.asof) + "). Bagong pipirmahan: " + r.add + ", na-update: " + r.upd + (r.gone ? ", kinansela (wala na sa Excel): " + r.gone : "") + ". " + (nokey.length ? "Walang tamang PASSBOOK KEY sa Excel: " + nokey.join(", ") + ". " : "") + "Huwag kalimutang i-download at i-upload ang data.json.";
+      main();
+    } catch (err) { $("#xlm").innerHTML = '<span class="bad">' + E(err.message || err) + "</span>"; }
+  };
+  $("#rs").onchange = async (e) => {
+    let t = { sig: 0, ask: 0, bad: 0, old: 0 };
+    for (const f of e.target.files) {
+      const texts = /\.zip$/i.test(f.name) || /zip/i.test(f.type) ? await unzipCsv(f).catch(() => []) : [await f.text()];
+      for (const tx of texts) { const r = await applyResponses(tx); Object.keys(t).forEach((k) => (t[k] += r[k])); }
+    }
+    await draft();
+    MSG = "Bagong pirma: " + t.sig + " · bagong tanong o tutol: " + t.ask + (t.bad ? " · hindi tugma (hindi tinanggap): " + t.bad : "") + (t.old ? " · dati nang nabasa: " + t.old : "") + ".";
+    main();
+  };
+  document.querySelectorAll("[data-solve]").forEach((b) => (b.onclick = async () => {
+    const [id, i] = [b.dataset.solve.slice(0, b.dataset.solve.lastIndexOf("|")), Number(b.dataset.solve.split("|").pop())];
+    const it = ST.items[id], c = it.concerns[i], ta = document.querySelector('[data-reply="' + b.dataset.solve.replace(/"/g, '\\"') + '"]');
+    c.resolved = true; c.reply = ta ? ta.value.trim() : ""; c.replyAt = Date.now();
+    if (!Object.keys(it.sigs || {}).length) it.restart = Date.now();
+    await draft(); MSG = "Naayos na ang tanong ni " + c.by + "."; main();
+  }));
+  document.querySelectorAll("[data-link]").forEach((b) => (b.onclick = async () => { const l = LINKS[b.dataset.link]; const ok = await copy(BASE + "#" + l.link); b.textContent = ok ? "Nakopya ✓" : BASE + "#" + l.link; }));
+  document.querySelectorAll("[data-msg]").forEach((b) => (b.onclick = async () => {
+    const l = LINKS[b.dataset.msg];
+    const A0 = ST.accounts[l.akey], fn = RT.title(l.name === A0.name && A0.first ? A0.first : RT.first(l.name));
+    const t = "Magandang araw, " + fn + "! Ito ang sarili mong RT LENDING PASSBOOK. Dito mo makikita ang balanse at kasaysayan mo, at dito ka pipirma. Walang account na kailangan: i-tap lang ang link. Para sa iyo lang ito, huwag ibahagi.\n" + BASE + "#" + l.link;
+    const ok = await copy(t); b.textContent = ok ? "Nakopya ✓" : "Kopyahin";
+    if (!ok) { const ta = document.createElement("textarea"); ta.value = t; b.after(ta); ta.select(); }
+  }));
+  document.querySelectorAll("[data-void]").forEach((b) => (b.onclick = async () => { ST.items[b.dataset.void].void = true; await draft(); main(); }));
+  $("#ia").onchange = items;
+  $("#mk").onclick = () => {
+    const A = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789", r = crypto.getRandomValues(new Uint8Array(22));
+    let k = ""; r.forEach((x, i) => { k += (i === 0 ? A.slice(0, 49) : A)[x % (i === 0 ? 49 : A.length)]; });
+    $("#nk").textContent = k;
+  };
+  $("#ck").onclick = async () => { const k = $("#nk").textContent; if (k) $("#ck").textContent = (await copy(k)) ? "Nakopya ✓" : "Kopyahin nang mano-mano"; };
+  $("#cadd").onclick = async () => {
+    const k = $("#ca").value, A = ST.accounts[k], t = $("#ct").value.trim(), lines = $("#cl").value.split("\n").map((s) => s.trim()).filter(Boolean);
+    if (!A || !t || !lines.length) return;
+    const vs = viewersOf(k), roles = {}; vs.forEach((v) => { roles[v.name] = v.role; });
+    const id = "C|" + Date.now();
+    ST.items[id] = { id, kind: "C", acct: k, holder: A.name, signers: [A.name], roles, title: t.toUpperCase(), lines, sent: Date.now(), sigs: {}, concerns: [] };
+    await draft(); MSG = "Naidagdag ang pipirmahan para kay " + A.name + "."; main();
+  };
+  $("#save2").onclick = async () => {
+    ST.days = Math.max(1, Math.min(60, Number($("#dy").value) || 7));
+    document.querySelectorAll("[data-auto]").forEach((c) => { ST.auto[c.dataset.auto] = c.checked ? 1 : 0; });
+    ["B", "I", "W"].forEach((k) => { const v = $("#tp" + k).value.trim(); if (v) ST.tpl[k] = v; });
+    const fs = parseForm($("#fs").value), fc = parseForm($("#fc").value);
+    ST.form = { signRaw: $("#fs").value.trim(), concernRaw: $("#fc").value.trim(), sign: fs, concern: fc };
+    await draft(); MSG = (fs && fc ? "Nakakabit na ang dalawang Google Form." : "Na-save. Hindi pa kumpleto ang Passbook Signatures at Passbook Concerns (kailangan ang pre-filled link na may 1, 2, 3).") + " Huwag kalimutang i-download at i-upload ang data.json."; main();
+  };
+  $("#dl").onclick = async () => {
+    if (!Object.keys(ST.accounts).length) { $("#dlm").textContent = "Basahin muna ang Excel."; return; }
+    $("#dlm").textContent = "Ginagawa…";
+    const text = await build();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); a.download = "data.json"; document.body.appendChild(a); a.click(); a.remove();
+    $("#dlm").textContent = "Na-download ang data.json (" + Math.round(text.length / 1024) + " KB). I-upload ito sa GitHub para ma-update ang lahat ng passbook.";
+  };
+}
+boot();
+}
+</script>
+</body>
+</html>
