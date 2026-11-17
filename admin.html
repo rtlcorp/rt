@@ -70,6 +70,23 @@ summary.big{font:700 15px Arial;color:var(--gold2);letter-spacing:.05em;text-tra
 .lk{display:flex;width:100%;justify-content:flex-start;text-align:left;margin:8px 0 0;padding:10px 16px;line-height:1.3;text-decoration:none}
 .lgs{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 2px}.lgs img{height:92px;width:auto;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* COLOUR CODE (R2): one accent per working section; its links wear the same colour */
+section.k{box-shadow:inset 6px 0 0 var(--k)}
+section.k>h2,section.k>details>summary.big{color:var(--k)}
+section.k>h2::before,section.k>details>summary.big::before{content:"";display:inline-block;flex:none;width:14px;height:14px;border-radius:4px;background:var(--k);margin-right:10px;vertical-align:-2px}
+.k-links{--k:#B8873F}.k-excel{--k:#1E7B34}.k-slip{--k:#0F766E}.k-forms{--k:#673AB7}.k-gh{--k:#24292F}
+.k-sulat{--k:#9D174D}
+.k-app{--k:#1F5FAE}
+.lr{border:1px solid var(--line);border-left:6px solid var(--k);border-radius:10px;padding:12px 14px;margin:10px 0;background:#fff}
+.lr .nm{font-weight:700}.lr .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.lr .row .btn{flex:1 1 140px;margin:0}
+.lr textarea{min-height:200px}.apk{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px;margin:8px 0}.apk b{font-weight:700;color:var(--muted)}
+.xv{background:#F4F7FB;border-radius:8px;padding:10px 12px;font-size:15px;margin-top:8px}.xv p{margin:4px 0}
+.lkg.g-drive{color:#1A73E8}.lkg.g-forms{color:#673AB7}.lkg.g-gh{color:#24292F}.lkg.g-rt{color:#0B2550}.lkg.g-logo{color:#B8873F}
+.lk.g-drive{border-left:6px solid #1A73E8}.lk.g-forms{border-left:6px solid #673AB7}.lk.g-gh{border-left:6px solid #24292F}.lk.g-rt{border-left:6px solid #0B2550}
+.k-forms a.btn.lite{border-left:6px solid #673AB7}
+.kl{padding:14px 18px 16px}.klt{font:700 13px Arial,sans-serif;letter-spacing:.05em;color:var(--muted);margin:0 0 10px}.klc{display:flex;flex-wrap:wrap;gap:8px}.kc{display:inline-flex;align-items:center;min-height:44px;padding:6px 14px 6px 12px;border:1px solid var(--line);border-left:6px solid var(--k);border-radius:10px;background:#fff;font:700 15px Arial,sans-serif;color:var(--k);cursor:pointer;text-align:left;text-transform:uppercase;letter-spacing:.02em}
+.k-gh details.up>summary{background:#24292F;color:#fff;border-radius:9px;padding:0 16px;min-height:48px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -120,13 +137,24 @@ const TPL = {
      "4. Ang bawat pagkilala sa passbook ko ay ituturing kong TINANGGAP kapag wala akong pirma o tutol sa loob ng «ARAW» araw mula nang maipadala.\n" +
      "5. Naka-lock ang pirma ko at hindi na mababago o mabubura.\n" +
      "6. Pumapayag ako na itala at gamitin ng «CO» ang personal kong datos para lamang sa gawaing ito, ayon sa Data Privacy Act of 2012 (RA 10173).\n" +
-     "7. Para sa akin lang ang link ng passbook ko, at hindi ko ito ibabahagi."
+     "7. Para sa akin lang ang link ng passbook ko, at hindi ko ito ibabahagi.",
+  PN: "Ako si «PANGALAN» («ID»), borrower ng «CO».\n" +
+      "1. Natanggap ko noong «PETSA_UTANG» ang «HALAGA» bilang regular na utang mula sa «CO».\n" +
+      "2. Nangangako akong babayaran ko sa «CO» ang «HALAGA», kasama ang dues na «RATE» nito kada sweldo («DUE_DAGDAG» kada sweldo), na kakaltasin sa sweldo ko tuwing ika-15 at katapusan ng buwan hanggang mabayaran ko ito nang buo.\n" +
+      "3. Maaari kong bayaran ang utang nang buo o bahagi anumang oras, at bababa ang dues ayon sa matitirang utang.\n" +
+      "4. Ang dues na hindi nakaltas ay ARREARS at may surcharge ayon sa kasunduan ko sa passbook.\n" +
+      "5. Ang pirma ko rito ay may parehong bisa ng pirma ko sa papel.",
+  PNB: "Ako si «PANGALAN» («ID»), borrower ng «CO».\n" +
+       "1. Natanggap ko noong «PETSA_UTANG» ang «HALAGA» na «URI» (bonus advance) mula sa «CO».\n" +
+       "2. Nangangako akong babayaran ko ang «HALAGA» mula sa «URI» ko.\n" +
+       "3. Bayad ang interest hanggang «BAYAD_HANGGANG». Kapag hindi pa bayad ang «HALAGA» pagsapit ng «SIMULA», may interest na «RATE_BONUS» kada sweldo hanggang mabayaran ko ito.\n" +
+       "4. Ang pirma ko rito ay may parehong bisa ng pirma ko sa papel."
 };
-const AUTO = { K: "Kasunduan (isang beses)", S: "Slip kada sweldo", P: "Payout ng investor", W: "Bayad sa taga-withdraw", R: "Bagong utang", BN: "Bonus advance", X: "Extra na ibinigay", SG: "Extra singil" };
+const AUTO = { K: "Kasunduan (isang beses)", S: "Slip kada sweldo", P: "Payout ng investor", W: "Bayad sa taga-withdraw", R: "Promissory Note ng bagong utang", BN: "Promissory Note ng bonus advance", X: "Extra na ibinigay", SG: "Extra singil" };
 
 function fresh() {
   return { v: 1, created: Date.now(), updated: 0, days: 7, tpl: Object.assign({}, TPL), auto: { K: 1, S: 1, P: 1, W: 1, R: 1, BN: 1, X: 1, SG: 1 },
-    views: [], accounts: {}, items: {}, seen: {}, form: formsDefault(), co: {}, asof: "", period: "", excelAt: 0 };
+    views: [], accounts: {}, items: {}, seen: {}, form: formsDefault(), co: {}, asof: "", period: "", excelAt: 0, letters: { tpl: {}, log: [], edit: {}, type: "REM" }, apps: {} };
 }
 
 /* ---------- keys ---------- */
@@ -244,7 +272,8 @@ function readExcel(buf) {
   for (let r = 6; r <= 305; r++) {
     if (!v(N, "B" + r) || !v(N, "L" + r)) continue;
     bon.push({ bid: v(N, "B" + r), id: v(N, "L" + r), type: String(v(N, "D" + r) || "").split(" – ")[0], principal: num(v(N, "E" + r)), released: ymd(v(N, "F" + r)), time: hm(v(N, "G" + r)),
-      paidThru: ymd(v(N, "H" + r)), source: v(N, "J" + r), left: num(v(N, "R" + r)), status: v(N, "V" + r) });
+      paidThru: ymd(v(N, "H" + r)), source: v(N, "J" + r), left: num(v(N, "R" + r)), status: v(N, "V" + r),
+      typeFull: String(v(N, "D" + r) || ""), rate: num(v(N, "N" + r)), duePer: String(v(N, "P" + r) || "") });
   }
   const accts = {};
   const stx = { PAID: "Bayad na", "BAYAD NA": "Bayad na", PARTIAL: "May kulang pa", HINIHINTAY: "Hinihintay ang sweldo", PENDING: "Hindi pa ang sweldo" };
@@ -255,9 +284,9 @@ function readExcel(buf) {
     if (seq >= 1 && seq <= 30) for (let k = 1; k <= 6; k++) { const rr = 3 + seq * 8 + k; if (typeof v(G, "C" + rr) === "number") graph.push({ label: String(v(G, "B" + rr) || ""), dapat: num(v(G, "C" + rr)), nakaltas: num(v(G, "D" + rr)) }); }
     const hist = led.filter((x) => x.id === id && TL[x.type]).map((x) => histRow(x, "B"));
     const ps = canon(v(B, "X" + r));
-    accts["B|" + id] = { type: "B", key: "B|" + id, id, name, first: String(v(B, "E" + r) || "").trim(), status: String(v(B, "C" + r) || ""), school: v(B, "G" + r) || "", ratePct: pct(num(v(B, "P" + r)) || set.rate),
+    accts["B|" + id] = { type: "B", key: "B|" + id, id, name, first: String(v(B, "E" + r) || "").trim(), since: ymd(v(B, "L" + r)), status: String(v(B, "C" + r) || ""), school: v(B, "G" + r) || "", ratePct: pct(num(v(B, "P" + r)) || set.rate),
       principal: num(v(B, "Q" + r)), duePerPay: num(v(B, "R" + r)), bonusPrincipal: num(v(B, "S" + r)), unpaid: num(v(B, "T" + r)), total: num(v(B, "U" + r)),
-      period: { label: set.activeLbl, start: set.activeP, due: num(v(B, "AA" + r)), bint: num(v(B, "AB" + r)), arr: num(v(B, "AC" + r)), tdue: num(v(B, "V" + r)), coll: num(v(B, "W" + r)),
+      period: { label: set.activeLbl, start: set.activeP, due: num(v(B, "AA" + r)), bint: num(v(B, "AB" + r)), arr: num(v(B, "AC" + r)), tdue: num(v(B, "V" + r)), coll: num(v(B, "W" + r)), less: num(v(B, "AO" + r)),
         salary: num(v(B, "AI" + r)), sent: num(v(B, "AH" + r)), kulang: num(v(B, "AL" + r)), status: ps, statusText: stx[ps] || ps },
       bonuses: bon.filter((b) => b.id === id && b.left > 0.004).map((b) => ({ type: b.type, left: b.left, paidThru: b.paidThru })), graph, history: hist.reverse() };
   }
@@ -274,7 +303,9 @@ function readExcel(buf) {
       perPay: k ? { interest: num(v(O, "E" + k)), benefit: num(v(O, "F" + k)), allowance: num(v(O, "G" + k)), give: num(v(O, "H" + k)), singil: num(v(O, "I" + k)), cash: num(v(O, "J" + k)),
         given: num(v(O, "K" + k)), short: num(v(O, "L" + k)), allowFor: forTL(v(O, "M" + k)), allowFrom: num(v(O, "N" + k)) } : { interest: 0, benefit: 0, allowance: 0, give: 0, singil: 0, cash: 0, given: 0, short: 0 },
       toDate: { payouts: sum("INVESTOR PAYOUT"), capIn: sum("INVESTOR CAPITAL IN"), capOut: sum("INVESTOR CAPITAL RETURN"), extra: sum("EXTRA BAYAD (itemized)"), singil: sum("EXTRA SINGIL (itemized)") },
-      graph: Object.keys(per).sort().slice(-6).map((p) => ({ label: short(p), amt: per[p] })), history: mine.map((x) => histRow(x, "I")).reverse() };
+      graph: Object.keys(per).sort().slice(-6).map((p) => ({ label: short(p), amt: per[p] })), history: mine.map((x) => histRow(x, "I")).reverse(),
+      byYear: mine.reduce((o, x) => { const y = String(x.date || "").slice(0, 4), k = { "INVESTOR PAYOUT": "payouts", "INVESTOR CAPITAL IN": "capIn", "INVESTOR CAPITAL RETURN": "capOut", "EXTRA BAYAD (itemized)": "extra", "EXTRA SINGIL (itemized)": "singil" }[x.type];
+        if (y && k) { o[y] = o[y] || { payouts: 0, capIn: 0, capOut: 0, extra: 0, singil: 0 }; o[y][k] += x.amt; } return o; }, {}) };
   }
   set.wd.forEach((name) => {
     const mine = led.filter((x) => !x.id && x.party === name && TL[x.type]);
@@ -336,7 +367,7 @@ function want(X) { // every item the Excel says should exist now
       const p = A.period;
       out.push(Object.assign({ id: "S|" + A.id + "|" + p.start, kind: "S", signers: [A.name] }, base, { title: "SLIP NG SWELDO · " + p.label, lines: [
         "Sweldo na pumasok: " + P$(p.salary) + ".",
-        "Kaltas: " + P$(p.coll) + " (dues " + P$(p.due) + (p.bint ? ", bonus interest " + P$(p.bint) : "") + (p.arr ? ", ARREARS, surcharge at extra singil " + P$(p.arr) : "") + ").",
+        "Kaltas: " + P$(p.coll) + " (dues " + P$(p.due) + (p.less > 0.004 ? " bawas ang December LESS na " + P$(p.less) : "") + (p.bint ? ", bonus interest " + P$(p.bint) : "") + (p.arr ? ", ARREARS, surcharge at extra singil " + P$(p.arr) : "") + ").",
         "Ipinadala sa akin: " + P$(p.sent) + "." + (p.kulang > 0.004 ? " Kulang pa: " + P$(p.kulang) + "." : ""),
         "Kinikilala ko na tama ang slip na ito."] }));
     }
@@ -349,14 +380,19 @@ function want(X) { // every item the Excel says should exist now
     const when = RT.dLabel(x.date) + (RT.tLabel(x.time) ? ", " + RT.tLabel(x.time) : "");
     if (x.type === "INVESTOR PAYOUT" && ST.auto.P) out.push(Object.assign({ id: "P|" + x.txn, kind: "P" }, base, { title: "PAYOUT · " + RT.dLabel(x.date), lines: ["Natanggap ko ang payout na " + P$(x.amt) + " para sa sweldo ng " + RT.dLabel(x.per).replace(/, \d{4}$/, "") + " period (" + when + ")."] }));
     if (x.type === "BAYAD SA TAGA-WITHDRAW" && ST.auto.W) out.push(Object.assign({ id: "W|" + x.txn, kind: "W" }, base, { title: "BAYAD SA WITHDRAW · " + RT.dLabel(x.date), lines: ["Natanggap ko ang " + P$(x.amt) + " na bayad sa withdraw ng " + (x.rem || "SWELDO") + " (" + when + ")."] }));
-    if (x.type === "LOAN RELEASE – REGULAR" && ST.auto.R && !(s.start && x.date < s.start)) out.push(Object.assign({ id: "R|" + x.txn, kind: "R" }, base, { title: "BAGONG UTANG · " + RT.dLabel(x.date), lines: ["Natanggap ko ang " + P$(x.amt) + " na utang (" + when + ").", (owner.duePerPay ? "Kasama na ang " + P$(x.amt * s.rate) + " nito (" + pct(s.rate) + " ng " + P$(x.amt) + ") sa " + P$(owner.duePerPay) + " na kaltas ko kada sweldo." : "Kasama na ang " + P$(x.amt * s.rate) + " nito (" + pct(s.rate) + " ng " + P$(x.amt) + ") sa kaltas ko kada sweldo.")] }));
+    if (x.type === "LOAN RELEASE – REGULAR" && ST.auto.R && !(s.start && x.date < s.start)) out.push(Object.assign({ id: "R|" + x.txn, kind: "R" }, base, { signers: [owner.name], any: true,
+      title: "PROMISSORY NOTE · " + P$(x.amt) + " · " + RT.dLabel(x.date),
+      lines: fill(ST.tpl.PN || TPL.PN, { PANGALAN: owner.name, ID: owner.id || "", CO: s.co, HALAGA: P$(x.amt), PETSA_UTANG: when, RATE: pct(s.rate), DUE_DAGDAG: P$(Math.round(x.amt * s.rate * 100) / 100) }) }));
     if (x.type === "EXTRA BAYAD (itemized)" && ST.auto.X) out.push(Object.assign({ id: "X|" + x.txn, kind: "X" }, base, { title: "EXTRA · " + x.rem + " · " + RT.dLabel(x.date), lines: ["Natanggap ko ang " + x.rem + " na " + P$(x.amt) + " (" + when + ")."] }));
     if (x.type === "EXTRA SINGIL (itemized)" && ST.auto.SG) out.push(Object.assign({ id: "SG|" + x.txn, kind: "SG" }, base, { title: "EXTRA SINGIL · " + x.rem + " · " + RT.dLabel(x.date), lines: ["Kinikilala ko ang extra singil na " + x.rem + " na " + P$(x.amt) + " (" + when + ").", owner.type === "B" ? "Kasama ito sa dues at ikakaltas sa sweldo." : "Ibabawas ito sa iaabot sa akin."] }));
   }
   if (ST.auto.BN) for (const b of X.bon) {
     const A = X.accts["B|" + b.id]; if (!A || !listed(A) || b.source !== "RELEASED") continue;
-    out.push({ id: "BN|" + b.bid, kind: "BN", acct: A.key, holder: A.name, roles: { [A.name]: "Borrower" }, any: true, signers: [A.name], title: b.type + " · " + RT.dLabel(b.released),
-      lines: ["Natanggap ko ang " + P$(b.principal) + " na " + b.type + " (" + RT.dLabel(b.released) + ").", "Bayad ang dues hanggang " + RT.dLabel(b.paidThru) + "."] });
+    const tf = b.typeFull.split(" – "), uri = tf[1] ? RT.title(tf[1]) + " (" + tf[0] + ")" : b.type;
+    out.push({ id: "BN|" + b.bid, kind: "BN", acct: A.key, holder: A.name, roles: { [A.name]: "Borrower" }, any: true, signers: [A.name],
+      title: "PROMISSORY NOTE · " + b.type + " " + P$(b.principal) + " · " + RT.dLabel(b.released),
+      lines: fill(ST.tpl.PNB || TPL.PNB, { PANGALAN: A.name, ID: A.id, CO: X.set.co, HALAGA: P$(b.principal), PETSA_UTANG: RT.dLabel(b.released) + (RT.tLabel(b.time) ? ", " + RT.tLabel(b.time) : ""),
+        URI: uri, BAYAD_HANGGANG: RT.dLabel(b.paidThru), SIMULA: b.duePer || "ang takdang petsa", RATE_BONUS: pct(b.rate || X.set.rate) }) });
   }
   return out;
 }
@@ -414,8 +450,18 @@ function csv(text) {
 }
 async function applyResponses(text) {
   const byPid = {}; Object.values(LINKS).forEach((l) => { byPid[l.pid] = l; });
-  let sig = 0, ask = 0, bad = 0, old = 0;
+  let sig = 0, ask = 0, bad = 0, old = 0, app = 0;
+  ST.apps = ST.apps || {};
   for (const row of csv(text)) {
+    const ac = row.find((c) => c.trim().startsWith("{") && c.includes('"t":"APP"'));
+    if (ac) {
+      let d; try { d = JSON.parse(ac); } catch (_) { continue; }
+      if (!d || !d.id || !d.a || typeof d.a !== "object") continue;
+      if (ST.apps[d.id]) { old++; continue; }
+      const a = {}; Object.entries(d.a).forEach(([k, v]) => { a[k] = typeof v === "number" ? v : String(v == null ? "" : v).slice(0, 600); });
+      ST.apps[d.id] = { id: String(d.id).slice(0, 40), at: +d.at || Date.now(), a, sig: String(d.sig || "").slice(0, 60000), got: Date.now(), status: "BAGO" }; app++;
+      continue;
+    }
     const cell = row.find((c) => c.trim().startsWith("{") && c.includes('"item"'));
     if (!cell) continue;
     let d; try { d = JSON.parse(cell); } catch (_) { continue; }
@@ -428,7 +474,7 @@ async function applyResponses(text) {
     if (d.k === "SIGN") { if (!it.sigs[who.name]) { it.sigs[who.name] = { at: d.at, path: d.svg, hash: d.hash, same: d.hash === (await RT.itemHash(it)) }; sig++; } }
     else if (d.k === "CONCERN") { it.concerns.push({ at: d.at, by: who.name, msg: d.msg, resolved: false }); ask++; }
   }
-  return { sig, ask, bad, old };
+  return { sig, ask, bad, old, app };
 }
 
 /* ---------- data.json ---------- */
@@ -442,7 +488,8 @@ async function build() {
       concerns: (it.concerns || []).map((c) => ({ at: c.at, by: c.by, msg: c.msg, resolved: c.resolved, reply: c.reply, replyAt: c.replyAt })) }));
     people[l.pid] = await RT.seal(await RT.aesKey(l.link), { v: 1, viewer: { name: l.name, role: l.role }, acct: A, items, co: ST.co, asof: ST.asof, period: ST.period, days: ST.days, updated: now });
   }
-  const out = { v: 1, updated: now, salt: ST.salt, verifier: ST.verifier, days: ST.days, form: ST.form, admin: await RT.seal(AKEY, Object.assign({}, ST, { dirty: 0 })), people };
+  const out = { v: 1, updated: now, salt: ST.salt, verifier: ST.verifier, days: ST.days, form: ST.form,
+    apply: { co: (ST.co && ST.co.name) || "RT LENDING CORP.", tagline: (ST.co && ST.co.tagline) || "", rate: ST.rate || 0.025 }, admin: await RT.seal(AKEY, Object.assign({}, ST, { dirty: 0 })), people };
   return JSON.stringify(out);
 }
 
@@ -479,11 +526,11 @@ async function ghPut(path, b64, msg) {
 function siteName(n) { const m = /^(.*?)(?: \(\d+\))?(\.[^.]+)$/.exec(n || ""); return m ? m[1] + m[2] : n; }
 function ghHTML() {
   const old = GH && Date.now() - GH.at > 330 * 864e5;
-  let h = '<section><h2>3 · I-save sa GitHub</h2>';
+  let h = '<section class="k k-gh" id="s-gh"><h2>3 · I-save sa GitHub</h2>';
   h += GH ? '<p class="muted">Isang tap lang: diretsong mapupunta ang data.json sa GitHub. Pagkalipas ng 1–2 minuto, updated na ang lahat ng passbook.</p><button class="btn gold full" id="ghs">I-SAVE SA GITHUB</button><p id="ghm" class="muted"></p>'
     : '<p class="muted">I-download ang data.json, tapos i-upload sa GitHub (Add file ▸ Upload files ▸ Commit). Pagka-upload, updated na ang lahat ng passbook. Para isang tap na lang, gawin ang GitHub key sa ibaba.</p>';
   if (old) h += '<p class="wait">Malapit nang mag-expire ang GitHub key (ginawa noong ' + E(RT.stamp(GH.at)) + '). Gumawa ng bago sa ibaba.</p>';
-  h += '<button class="btn ' + (GH ? "lite" : "gold") + ' full" id="dl">I-DOWNLOAD ANG data.json</button>' + (REPO ? '<a class="btn sec full" href="' + E(REPO) + '" target="_blank" rel="noopener">BUKSAN ANG UPLOAD SA GITHUB</a>' : "") + '<p id="dlm" class="muted"></p><p id="ghz" class="muted"></p>';
+  h += '<button class="btn ' + (GH ? "lite" : "gold") + ' full" id="dl">I-DOWNLOAD ANG data.json</button>' + (REPO && !GH ? '<a class="btn sec full" href="' + E(REPO) + '" target="_blank" rel="noopener">BUKSAN ANG UPLOAD SA GITHUB</a>' : "") + '<p id="dlm" class="muted"></p><p id="ghz" class="muted"></p>';
   h += '<details' + (GH && !old ? "" : " open") + '><summary>' + (GH ? "GitHub key (naka-set)" : "Isang beses lang: GitHub key") + "</summary>";
   if (GH) h += '<p class="muted">Naka-set noong ' + E(RT.stamp(GH.at)) + '. Sa phone na ito lang nakatago ang key, naka-lock sa password mo.</p>';
   h += '<ol class="muted" style="padding-left:20px;margin:8px 0"><li>I-tap ang <b>GUMAWA NG GITHUB KEY</b>. Bubukas ang GitHub (naka-sign in dapat).</li><li>Sa <b>Resource owner</b>, i-tap at piliin ulit ang <b>' + E(GH_OWNER) + '</b>.</li><li>Sa <b>Repository access</b>, piliin ang <b>All repositories</b>.</li>' +
@@ -492,7 +539,7 @@ function ghHTML() {
     '<label for="ghk">GitHub key</label><input type="password" id="ghk" autocomplete="off" spellcheck="false" placeholder="github_pat_…">' +
     '<button class="btn pri" id="ghk2">I-SAVE ANG KEY</button>' + (GH ? '<button class="btn lite" id="ghx">TANGGALIN ANG KEY</button>' : "") +
     '<p id="ghkm" class="muted">Huwag ipadala ang key kahit kanino.</p></details>';
-  if (GH) h += '<details><summary>Mag-upload ng file ng site (hal. bagong admin.html)</summary><p class="muted">Para lang sa: ' + SITE_FILES.join(", ") +
+  if (GH) h += '<details class="up"><summary>Mag-upload ng file ng site (hal. bagong admin.html)</summary><p class="muted">Para lang sa: ' + SITE_FILES.join(", ") +
     '. Hindi tatanggapin dito ang Excel, data.json at mga sagot ng Google Form.</p><input type="file" id="ghf" multiple><button class="btn sec" id="ghu">I-UPLOAD SA GITHUB</button><p id="ghum" class="muted"></p></details>';
   return h + "</section>";
 }
@@ -540,17 +587,21 @@ function ghBind() {
 }
 function main() {
   withForms(ST);
+  ST.letters = Object.assign({ tpl: {}, log: [], edit: {}, type: "REM" }, ST.letters || {}); ST.apps = ST.apps || {};
   const now = Date.now(), accts = Object.values(ST.accounts);
   const open = []; Object.values(ST.items).forEach((it) => (it.concerns || []).forEach((c, i) => { if (!c.resolved) open.push({ it, c, i }); }));
   let h = "";
   if (MSG) h += '<section><div class="note">' + E(MSG) + "</div></section>";
-  h += '<section><details id="lkd"><summary class="big">Mga link at logo</summary>' + linksHTML() + "</details></section>";
-  h += '<section><h2>1 · Excel</h2><p class="muted">Piliin ang pinakabagong RT LENDING SYSTEM (pagkatapos i-save sa Excel). ' +
+  h += '<section class="kl"><p class="klt">KULAY NG BAWAT BAHAGI</p><div class="klc">' + KULAY.map((k) => '<button class="kc ' + k[0] + '" data-go="' + k[1] + '">' + E(k[2]) + "</button>").join("") + "</div></section>";
+  h += '<section class="k k-links" id="s-links"><details id="lkd"><summary class="big">Mga link at logo</summary>' + linksHTML() + "</details></section>";
+  h += '<section class="k k-excel" id="s-excel"><h2>1 · Excel</h2><p class="muted">Piliin ang pinakabagong RT LENDING SYSTEM (pagkatapos i-save sa Excel). ' +
     (ST.excelAt ? "Huling basa: " + E(RT.stamp(ST.excelAt)) + " · as of " + E(RT.dLabel(ST.asof)) : "Wala pang nababasang Excel.") + '</p><input type="file" id="xl" accept=".xlsx,.xlsm"><p id="xlm" class="muted"></p></section>';
-  h += '<section><h2>Mga slip</h2><p class="muted">Ginagawa ang mga slip dito mismo sa phone mula sa Excel na pinili mo. Walang ina-upload. Bawat slip ay para lang sa taong nakapangalan, at ikaw ang pipili kung kanino ipapadala.</p><div id="sl">' + slipsHTML() + '</div><p id="slm" class="muted"></p></section>';
-  h += '<section><h2>2 · Mga sagot mula sa Google Form</h2><p class="muted">Kapag may bagong pirma o tanong: i-download ang responses ng <b>Passbook Signatures</b> at <b>Passbook Concerns</b>, at piliin dito ang dalawang file (.zip o .csv) nang sabay.</p>' +
+  h += '<section class="k k-slip" id="s-slip"><h2>Mga slip</h2><p class="muted">Ginagawa ang mga slip dito mismo sa phone mula sa Excel na pinili mo. Walang ina-upload. Bawat slip ay para lang sa taong nakapangalan, at ikaw ang pipili kung kanino ipapadala.</p><div id="sl">' + slipsHTML() + '</div><p id="slm" class="muted"></p></section>';
+  h += lettersHTML();
+  h += '<section class="k k-forms" id="s-forms"><h2>2 · Mga sagot mula sa Google Form</h2><p class="muted">Kapag may bagong pirma o tanong: i-download ang responses ng <b>Passbook Signatures</b> at <b>Passbook Concerns</b>, at piliin dito ang dalawang file (.zip o .csv) nang sabay.</p>' +
     (linkTo("SIGNATURES") ? '<a class="btn lite" href="' + E(linkTo("SIGNATURES")) + '" target="_blank" rel="noopener">BUKSAN ANG SIGNATURES</a>' : "") +
     (linkTo("CONCERNS") ? '<a class="btn lite" href="' + E(linkTo("CONCERNS")) + '" target="_blank" rel="noopener">BUKSAN ANG CONCERNS</a>' : "") + '<input type="file" id="rs" accept=".csv,.zip,text/csv,application/zip,application/x-zip-compressed" multiple><p id="rsm" class="muted"></p></section>';
+  h += appsHTML();
   h += '<section><h2>May tanong o tutol (' + open.length + ")</h2>" + (open.length ? open.map((o) =>
     '<div class="alertc"><b>' + E(o.c.by) + "</b> · " + E(RT.stamp(o.c.at)) + "<br>" + E(o.it.title) + "<p>" + E(o.c.msg) + '</p><label>Sagot mo (makikita niya)</label><textarea data-reply="' + E(o.it.id) + "|" + o.i + '"></textarea>' +
     '<button class="btn pri" data-solve="' + E(o.it.id) + "|" + o.i + '">NAAYOS NA</button><p class="muted">Pagka-ayos, magsisimula ulit ang ' + ST.days + " araw kung wala pang pirma.</p></div>").join("") : '<p class="muted">Walang bukas na tanong o tutol.</p>') + "</section>";
@@ -568,7 +619,7 @@ function main() {
   h += '<section><details><summary>Kasunduan, patakaran at Google Form</summary>' +
     '<label for="dy">Ilang araw bago ituring na TINANGGAP</label><input type="number" id="dy" min="1" max="60" value="' + ST.days + '">' +
     '<label>Kusang gagawin na pipirmahan</label>' + Object.entries(AUTO).map(([k, t]) => '<label style="font-weight:400"><input type="checkbox" data-auto="' + k + '"' + (ST.auto[k] ? " checked" : "") + "> " + E(t) + "</label>").join("") +
-    ["B", "I", "W"].map((k) => '<label for="tp' + k + '">Kasunduan ng ' + ({ B: "borrower", I: "investor", W: "taga-withdraw" })[k] + '</label><textarea id="tp' + k + '" rows="10">' + E(ST.tpl[k]) + "</textarea>").join("") +
+    ["B", "I", "W", "PN", "PNB"].map((k) => '<label for="tp' + k + '">' + ({ B: "Kasunduan ng borrower", I: "Kasunduan ng investor", W: "Kasunduan ng taga-withdraw", PN: "Promissory Note ng bagong utang", PNB: "Promissory Note ng bonus advance" })[k] + '</label><textarea id="tp' + k + '" rows="10">' + E(ST.tpl[k] || TPL[k]) + "</textarea>").join("") +
     '<p class="muted">Ang «MGA SALITANG ITO» ay kusang napapalitan ng datos. Para lang sa mga bagong pipirmahan ang pagbabago.</p>' +
     '<label for="fs">RT LENDING CORP. - Passbook Signatures (pre-filled link na may 1, 2, 3)</label><input type="text" id="fs" value="' + E(ST.form.signRaw || "") + '">' +
     '<label for="fc">RT LENDING CORP. - Passbook Concerns (pre-filled link na may 1, 2, 3)</label><input type="text" id="fc" value="' + E(ST.form.concernRaw || "") + '">' +
@@ -580,6 +631,18 @@ function main() {
   slipsBind();
   linksBind();
   ghBind();
+  kulayBind();
+  lettersBind();
+  appsBind();
+}
+const KULAY = [["k-links", "s-links", "Mga link at logo"], ["k-excel", "s-excel", "1 · Excel"], ["k-slip", "s-slip", "Mga slip"],
+  ["k-sulat", "s-sulat", "Mga sulat"], ["k-forms", "s-forms", "2 · Mga sagot mula sa Google Form"], ["k-app", "s-app", "Mga loan application"], ["k-gh", "s-gh", "3 · I-save sa GitHub"]];
+function kulayBind() {
+  document.querySelectorAll(".kc[data-go]").forEach((b) => { b.onclick = () => {
+    const s = document.getElementById(b.dataset.go); if (!s) return;
+    if (b.dataset.go === "s-links") { const d = $("#lkd"); if (d) d.open = true; }
+    s.scrollIntoView({ behavior: "smooth", block: "start" });
+  }; });
 }
 function items() {
   const sel = $("#ia").value, now = Date.now();
@@ -634,10 +697,15 @@ function linkTo(word) {
   const l = all.find((x) => /docs\.google\.com\/forms\//i.test(x.url)) || all[0];  // the Google Form first, then any match
   return l ? l.url : "";
 }
+function linkKind(g) {
+  const u = String(g || "").toUpperCase();
+  return /DRIVE/.test(u) ? "g-drive" : /FORM/.test(u) ? "g-forms" : /GITHUB/.test(u) ? "g-gh" : /^\W*RT\b/.test(u) ? "g-rt" : "";
+}
 function linksHTML() {
-  return linkList().map((x) => x.group ? '<div class="lkg">' + E(x.group) + "</div>" :
-    '<a class="btn lite lk" href="' + E(x.url) + '" target="_blank" rel="noopener">' + E(x.label) + "</a>").join("") +
-    '<div class="lkg">Logo</div><div class="lgs"><img src="' + LOGO_PNG + '" alt="RT LENDING CORP. logo"><img src="' + FORM_HDR + '" alt="Logo para sa Google Forms"></div>' +
+  let g = "";
+  return linkList().map((x) => x.group ? '<div class="lkg ' + (g = linkKind(x.group)) + '">' + E(x.group) + "</div>" :
+    '<a class="btn lite lk ' + g + '" href="' + E(x.url) + '" target="_blank" rel="noopener">' + E(x.label) + "</a>").join("") +
+    '<div class="lkg g-logo">Logo</div><div class="lgs"><img src="' + LOGO_PNG + '" alt="RT LENDING CORP. logo"><img src="' + FORM_HDR + '" alt="Logo para sa Google Forms"></div>' +
     '<button class="btn sec full" data-logo="png">I-DOWNLOAD: OFFICIAL LOGO (PNG, walang background)</button>' +
     '<button class="btn sec full" data-logo="jpg">I-DOWNLOAD: OFFICIAL LOGO (JPG, puting background)</button>' +
     '<button class="btn sec full" data-logo="hdr">I-DOWNLOAD: LOGO PARA SA GOOGLE FORMS (1600 × 400)</button><p id="lgm" class="muted"></p>' +
@@ -787,6 +855,11 @@ async function bookOpen(bytes) {
     }
     return o;
   });
+  B.dxfs = xa(x1(st, "dxfs"), "dxf").map((d) => {
+    const f = xkid(d, "font"), fl = xkid(d, "fill"), p = fl && xkid(fl, "patternFill");
+    return { color: f && xkid(f, "color") ? B.color(xkid(f, "color"), null) : null, b: f && xkid(f, "b") ? on(f, "b") : null,
+      fill: p ? B.color(xkid(p, "bgColor") || xkid(p, "fgColor"), null) : null };
+  });
   B.xfs = xa(x1(st, "cellXfs"), "xf").map((x) => {
     const a = xkid(x, "alignment");
     return { fmt: +(x.getAttribute("numFmtId") || 0), font: +(x.getAttribute("fontId") || 0), fill: +(x.getAttribute("fillId") || 0), border: +(x.getAttribute("borderId") || 0),
@@ -830,12 +903,22 @@ async function sheetOpen(name) {
     }
   }
   const merges = xa(doc, "mergeCell").map((m) => rangeRC(m.getAttribute("ref"))).filter(Boolean);
+  const cfs = [];
+  for (const cf of xa(doc, "conditionalFormatting")) {
+    const ranges = String(cf.getAttribute("sqref") || "").trim().split(/\s+/).map(rangeRC).filter(Boolean);
+    if (!ranges.length) continue;
+    for (const ru of xa(cf, "cfRule")) {
+      const fe = xkid(ru, "formula");
+      if (ru.getAttribute("type") === "expression" && fe) cfs.push({ ranges, dxf: +ru.getAttribute("dxfId"), pri: +(ru.getAttribute("priority") || 0), f: fe.textContent });
+    }
+  }
+  cfs.sort((a, b) => a.pri - b.pri);
   const brks = xa(x1(doc, "rowBreaks"), "brk").map((b) => +b.getAttribute("id")).sort((a, b) => a - b);
   const of = x1(doc, "oddFooter");
   let objs = [];
   const dr = x1(doc, "drawing");
   if (dr) { const sr = await B.rels(info.path), path = sr[xrid(dr, "id")]; if (path) objs = await drawingOpen(path); }
-  const sh = { name, idx: info.idx, cols, defW, defH, rows, cells, merges, brks, footer: of ? of.textContent : "", objs };
+  const sh = { name, idx: info.idx, cols, defW, defH, rows, cells, merges, cfs, brks, footer: of ? of.textContent : "", objs };
   B.cache[name] = sh;
   return sh;
 }
@@ -847,6 +930,39 @@ async function drawingOpen(path) {
     const pic = xkid(a, "pic"), gf = xkid(a, "graphicFrame");
     if (pic) { const bl = x1(pic, "blip"), p = bl && rels[xrid(bl, "embed")]; if (p) out.push(Object.assign(o, { kind: "img", path: p })); }
     else if (gf) { const ch = x1(gf, "chart"), p = ch && rels[xrid(ch, "id")]; if (p) out.push(Object.assign(o, { kind: "chart", path: p })); }
+  }
+  return out;
+}
+/* Conditional formats, as Excel shows them: a simple comparison (cell vs number, text, TRUE/FALSE or another cell),
+   relative references moving with the cell. A rule this cannot read is left out. */
+function cfTest(sh, rule, c, r) {
+  const a = rule.ranges[0], dc = c - a.c1, dr = r - a.r1;
+  const val = (t) => {
+    t = t.trim();
+    if (/^-?\d+(\.\d+)?$/.test(t)) return +t;
+    if (/^".*"$/.test(t)) return t.slice(1, -1).replace(/""/g, '"');
+    if (/^TRUE$/i.test(t)) return true;
+    if (/^FALSE$/i.test(t)) return false;
+    const m = /^(\$?)([A-Z]{1,3})(\$?)(\d+)$/.exec(t);
+    if (!m) return undefined;
+    const cell = sh.cells[colLet(colNum(m[2]) + (m[1] ? 0 : dc)) + (+m[4] + (m[3] ? 0 : dr))];
+    return cell ? cell.v : null;
+  };
+  const f = String(rule.f).trim(), m = /^([^<>=]+)(<=|>=|<>|=|<|>)([^<>=]+)$/.exec(f);
+  if (!m) { const x = val(f); return x === true || (typeof x === "number" && x !== 0); }
+  let x = val(m[1]), y = val(m[3]);
+  if (x === undefined || y === undefined) return false;
+  if (typeof x === "boolean" || typeof y === "boolean") { x = x === true || x === 1 || x === "1" || x === "TRUE"; y = y === true || y === 1 || y === "1" || y === "TRUE"; }
+  else if (typeof x === "number" || typeof y === "number") { x = typeof x === "number" ? x : (x == null || x === "" ? 0 : NaN); y = typeof y === "number" ? y : (y == null || y === "" ? 0 : NaN); if (isNaN(x) || isNaN(y)) return false; }
+  else { x = String(x == null ? "" : x).toUpperCase(); y = String(y == null ? "" : y).toUpperCase(); }
+  switch (m[2]) { case "=": return x === y; case "<>": return x !== y; case "<": return x < y; case ">": return x > y; case "<=": return x <= y; default: return x >= y; }
+}
+function cfLook(sh, c, r) {
+  const out = {};
+  for (const ru of sh.cfs || []) {
+    if (!ru.ranges.some((g) => c >= g.c1 && c <= g.c2 && r >= g.r1 && r <= g.r2) || !cfTest(sh, ru, c, r)) continue;
+    const d = SX.book.dxfs[ru.dxf]; if (!d) continue;
+    for (const k of ["fill", "color", "b"]) if (out[k] == null && d[k] != null) out[k] = d[k];
   }
   return out;
 }
@@ -1001,8 +1117,12 @@ const PT = 4 / 3, PAD = 3, EMU = 9525;
 const FAM = (n) => /times|georgia|serif/i.test(n) && !/sans/i.test(n) ? "'Times New Roman','Liberation Serif','Noto Serif',Georgia,serif"
   : /calibri/i.test(n) ? "Calibri,Carlito,Roboto,Arial,sans-serif" : "Arial,'Liberation Sans',Roboto,'Helvetica Neue',sans-serif";
 const fontCss = (f, k) => (f.i ? "italic " : "") + (f.b ? "bold " : "") + (f.sz * PT * (k || 1)).toFixed(2) + "px " + FAM(f.name);
+// A slip tab prints only the slip, never the controls beside it (they hold the ATM PIN), even when an app dropped the print area.
+const SLIP_AREAS = [[/^SLIP( \d+)?$/, "OFFSET('@'!$B$1,0,0,'@'!$J$49,6)"], [/^INV SLIP \d+$/, "OFFSET('@'!$B$1,0,0,'@'!$K$14,7)"],
+  [/^AGENT PAY SLIP$/, "OFFSET('@'!$B$1,0,0,'@'!$J$6,6)"], [/^WITHDRAWAL SLIP$/, "OFFSET('@'!$B$1,0,0,'@'!$L$7,8)"]];
 function printArea(sh) {
-  const t = SX.book.areas[sh.idx] || "";
+  let t = SX.book.areas[sh.idx] || "";
+  if (!t) { const d = SLIP_AREAS.find((a) => a[0].test(sh.name)); if (d) t = d[1].replace(/@/g, sh.name); }
   const m = /OFFSET\(\s*'?([^'!]+)'?!\$?([A-Z]+)\$?(\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*'?([^'!]+)'?!\$?([A-Z]+)\$?(\d+)\s*,\s*(\d+)\s*\)/.exec(t);
   if (m) {
     const hc = sh.cells[m[7] + m[8]], h = Math.max(1, Math.round(+(hc && hc.v) || 1));
@@ -1197,7 +1317,7 @@ async function slipPages(sheetName) {
     // 1. fills
     for (let r = ra; r <= rb; r++) for (const c of cols) {
       if (covered[c + "," + r] || !rh[r] || !cw[c]) continue;
-      const xf = cellXf(sh, c, r), fill = B.fills[xf.fill];
+      const xf = cellXf(sh, c, r), fill = cfLook(sh, c, r).fill || B.fills[xf.fill];
       if (!fill) continue;
       const R = rectOf(c, r); ctx.fillStyle = fill; ctx.fillRect(R.x, R.y, R.w + 0.5, R.h + 0.5);
     }
@@ -1218,7 +1338,8 @@ async function slipPages(sheetName) {
       if (covered[c + "," + r] || !rh[r]) continue;
       const cell = sh.cells[colLet(c) + r];
       if (!cell || cell.v == null || cell.v === "") continue;
-      const xf = cellXf(sh, c, r), font = B.fonts[xf.font] || B.fonts[0];
+      const xf = cellXf(sh, c, r), cfo = cfLook(sh, c, r), font0 = B.fonts[xf.font] || B.fonts[0];
+      const font = cfo.b != null || cfo.color ? Object.assign({}, font0, cfo.b != null ? { b: cfo.b } : {}, cfo.color ? { color: cfo.color } : {}) : font0;
       const shown = cellText(cell.v, B.fmts[xf.fmt] || FMT0[xf.fmt] || "General");
       if (!shown.text) continue;
       const R = rectOf(c, r);
@@ -1407,6 +1528,264 @@ async function slipsBind() {
   });
 }
 /* SLIPS:END */
+/* R4:START — MGA SULAT (letters as JPEGs on the RT letterhead) and MGA LOAN APPLICATION.
+   Letters: each kind has an editable template («WORDS» fill in from the Excel), the people it fits are listed from the Excel,
+   and every letter can be edited for one person before it is sent. Nothing is uploaded: the JPEG is made here on the phone. */
+const LTR = {
+  REM: { name: "Payment Reminder", title: "PAYMENT REMINDER", who: "B", conf: 1, body: "Dear «FIRST»,\nThis is a friendly reminder that your dues for the «PERIOD» payday amount to «HALAGA». They will be deducted from your salary on payday.\nIf you prefer to pay ahead, you may send it through «PAY». Please write «REF» in the notes.\nThank you for your continued trust in «CO»." },
+  OVD: { name: "Overdue Notice", title: "OVERDUE NOTICE", who: "B", conf: 1, body: "Dear «FIRST»,\nOur records show unpaid dues of «HALAGA», including surcharge, as of «ASOF».\nWe understand that delays can happen. Please settle this amount at your earliest convenience, through «PAY» or with your next salary deduction, so that no further surcharge is added.\nIf you have already paid, kindly disregard this notice and send us your proof of payment. If you would like to talk about a payment arrangement, please message us." },
+  FDL: { name: "Final Demand Letter", title: "FINAL DEMAND LETTER", who: "B", conf: 1, body: "Dear «FIRST»,\nOn «PETSA_PAUNAWA», we sent you an Overdue Notice about your unpaid dues. As of «ASOF», the unpaid amount is «HALAGA», including surcharge.\nWe respectfully ask you to settle this amount within seven (7) days from receipt of this letter, through «PAY» or by arrangement with us.\nWe value our relationship with you and wish to resolve this amicably. If we do not hear from you within that time, we may be constrained to pursue the remedies available to us under the law.\nIf you have already paid, please disregard this letter and send us your proof of payment." },
+  CFP: { name: "Certificate of Full Payment", title: "CERTIFICATE OF FULL PAYMENT", who: "B", cert: 1, body: "This certifies that «PANGALAN» («ID») has fully paid all loans with «CO» as of «ASOF».\nThank you, «FIRST», for completing your loan. It has been a pleasure serving you, and our door is always open whenever you need us again." },
+  CGS: { name: "Certificate of Good Standing", title: "CERTIFICATE OF GOOD STANDING", who: "B", cert: 1, body: "This certifies that «PANGALAN» («ID») is a borrower in good standing with «CO» as of «ASOF». The dues are paid as scheduled, with no unpaid dues and no surcharge.\nThank you, «FIRST», for your faithful payments." },
+  WLB: { name: "Welcome Letter (borrower)", title: "WELCOME TO «CO»", who: "B", body: "Dear «FIRST»,\nWelcome to «CO»! Thank you for trusting us.\nYour dues are «DUE» every payday, deducted from your salary on the 15th and at the end of the month. What is left of your salary is sent to you.\nYour passbook link shows your loan, every deduction and every slip, anytime. Please keep the link to yourself.\nWe are here to help. Just send us a message whenever you have a question." },
+  NLA: { name: "Notice of Loan Approval", title: "NOTICE OF LOAN APPROVAL", who: "A", body: "Dear «FIRST»,\nWe are pleased to inform you that your loan application dated «PETSA_APP» is APPROVED.\nApproved amount: «HALAGA»\nRelease date: «PETSA_RELEASE»\nDues: «RATE» of the loan every payday («DUE_DAGDAG»), deducted from your salary on the 15th and at the end of the month.\nOnce the loan is released, please sign the Promissory Note in your passbook.\nThank you for choosing «CO»." },
+  PN: { name: "Promissory Note (copy)", title: "PROMISSORY NOTE", who: "PN", body: "" },
+  WLI: { name: "Welcome Letter (investor)", title: "WELCOME TO «CO»", who: "I", body: "Dear «FIRST»,\nWelcome to «CO»! Thank you for investing with us.\nYour capital of «PUHUNAN» earns «RATE_INV» a month, given to you every payday. Your passbook shows every payout, addition and return, with the date and time.\nWe are grateful for your trust and look forward to growing together." },
+  TYI: { name: "Thank-you letter (investor)", title: "THANK YOU", who: "I", body: "Dear «FIRST»,\nThank you for your trust in «CO». Your capital of «PUHUNAN» helps fellow educators meet their needs, and we are grateful to have you with us.\nAs of «ASOF», you have received «PAYOUTS» in payouts.\nWe look forward to another good year together." },
+  YES: { name: "Year-end statement (investor)", title: "YEAR-END STATEMENT «TAON»", who: "I", body: "Dear «FIRST»,\nHere is your statement for «TAON», from «MULA» to «HANGGANG».\nCapital now: «PUHUNAN»\nCapital added in «TAON»: «DAGDAG»\nCapital returned in «TAON»: «IBINALIK»\nPayouts received in «TAON»: «PAYOUTS»\nExtras received in «TAON»: «EXTRA»\nCharges in «TAON»: «SINGIL»\nThank you for being part of «CO» in «TAON»." },
+};
+const longDate = (d) => { if (!d) return ""; const [y, m, dd] = String(d).split("-").map(Number); return MONTHS[m - 1] + " " + dd + ", " + y; };
+const ltrTpl = (k) => Object.assign({}, LTR[k], (ST.letters.tpl || {})[k] || {});
+const ltrLast = (k, key) => (ST.letters.log || []).filter((x) => x.type === k && x.key === key).reduce((m, x) => Math.max(m, x.at), 0);
+const appName = (p) => [p.a.first, p.a.mid, p.a.sur].filter(Boolean).join(" ");
+function ltrFits(k, A) {
+  const p = A.period || {}, act = A.status === "ACTIVE", days = (d) => (d ? (Date.parse(ST.asof || RT.ymd(Date.now())) - Date.parse(d)) / RT.DAY : 1e9);
+  if (k === "REM") return act && p.tdue - p.coll > 0.004;
+  if (k === "OVD") return act && p.arr > 0.004;
+  if (k === "FDL") { const t = ltrLast("OVD", A.key); return act && p.arr > 0.004 && t > 0 && Date.now() - t >= 7 * RT.DAY; }
+  if (k === "CFP") return A.status === "FULLY PAID";
+  if (k === "CGS") return act && p.arr <= 0.004 && (A.history || []).some((h) => h.text === TL["PAYROLL COLLECTION"]);
+  if (k === "WLB") return act && days(A.since) <= 30;
+  if (k === "WLI" || k === "TYI") return act;
+  return true;
+}
+function ltrTargets(k) {
+  const L = LTR[k], all = !!ST.letters.all;
+  if (L.who === "A") return Object.values(ST.apps || {}).filter((p) => p.status === "APRUBADO").sort((a, b) => b.at - a.at)
+    .map((p) => ({ key: "APP|" + p.id, name: appName(p), first: p.a.first, app: p, info: P$(p.ok.amt) + " · release " + RT.dLabel(p.ok.rel) }));
+  if (L.who === "PN") return Object.values(ST.items).filter((it) => (it.kind === "R" || it.kind === "BN") && !it.void).sort((a, b) => b.sent - a.sent)
+    .map((it) => ({ key: "PN|" + it.id, name: it.holder, first: (ST.accounts[it.acct] || {}).first || it.holder, it, A: ST.accounts[it.acct], info: it.title.replace(/^PROMISSORY NOTE · /, "") + " · " + RT.status(it, Date.now(), ST.days).label }));
+  return Object.values(ST.accounts).filter((A) => A.type === L.who && listed(A) && (all || ltrFits(k, A))).sort((a, b) => a.name.localeCompare(b.name)).map((A) => {
+    const p = A.period || {};
+    const info = k === "REM" ? P$(p.tdue - p.coll) + " sa " + p.label : k === "OVD" || k === "FDL" ? "ARREARS " + P$(p.arr) + (ltrLast("OVD", A.key) ? " · Overdue Notice " + RT.stamp(ltrLast("OVD", A.key)) : "")
+      : A.type === "I" ? "Puhunan " + P$(A.capital) : A.status + (A.since ? " · mula " + RT.dLabel(A.since) : "");
+    return { key: A.key, name: A.name, first: A.first || A.name, A, info };
+  });
+}
+function ltrMap(k, t) {
+  const m = { CO: (ST.co && ST.co.name) || "RT LENDING CORP.", PAY: (ST.co && ST.co.pay) || "BPI", PETSA: longDate(RT.ymd(Date.now())), ASOF: longDate(ST.asof), RATE: pct(ST.rate || 0.025),
+    PANGALAN: t.name, FIRST: firstName(t.first || t.name), ID: (t.A && t.A.id) || "" };
+  const A = t.A;
+  if (A && A.type === "B") {
+    const p = A.period || {};
+    Object.assign(m, { PERIOD: p.label || "", HALAGA: P$(k === "REM" ? p.tdue - p.coll : p.arr), DUE: P$(A.duePerPay), PETSA_PAUNAWA: longDate(RT.ymd(ltrLast("OVD", A.key) || Date.now())),
+      REF: p.start ? "RT" + p.start.slice(2).replace(/-/g, "") + "-0" + String(A.id).slice(-3) : "" });
+  }
+  if (A && A.type === "I") {
+    const y = String(ST.letters.year || String(ST.asof || RT.ymd(Date.now())).slice(0, 4)), Y = (A.byYear || {})[y] || { payouts: 0, capIn: 0, capOut: 0, extra: 0, singil: 0 };
+    const as = String(ST.asof || RT.ymd(Date.now())), to = [y + "-12-31", as].sort()[0];
+    let from = [y + "-01-01", String(ST.start || "")].sort().pop();  // the records begin at the system start
+    if (from > to) from = y + "-01-01";
+    Object.assign(m, { PUHUNAN: P$(A.capital), RATE_INV: A.ratePct, PAYOUTS: P$(k === "YES" ? Y.payouts : A.toDate.payouts), TAON: y, DAGDAG: P$(Y.capIn), IBINALIK: P$(Y.capOut), EXTRA: P$(Y.extra), SINGIL: P$(Y.singil),
+      MULA: longDate(from), HANGGANG: longDate(to) });
+  }
+  if (t.app) {
+    const p = t.app;
+    Object.assign(m, { HALAGA: P$(p.ok.amt), PETSA_APP: longDate(RT.ymd(p.at)), PETSA_RELEASE: longDate(p.ok.rel), DUE_DAGDAG: P$(Math.round(p.ok.amt * (ST.rate || 0.025) * 100) / 100) });
+  }
+  return m;
+}
+function ltrText(k, t) { // {title, lines}
+  if (t.it) return { title: "PROMISSORY NOTE", lines: t.it.lines };
+  const T = ltrTpl(k), m = ltrMap(k, t), ed = (ST.letters.edit || {})[k + "|" + t.key];
+  return { title: fill(T.title, m).join(" "), lines: ed ? ed.split("\n").map((x) => x.trim()).filter(Boolean) : fill(T.body, m) };
+}
+let LOGO_IMG = null;
+async function logoImg() { if (!LOGO_IMG) { LOGO_IMG = new Image(); LOGO_IMG.src = LOGO_PNG; await LOGO_IMG.decode(); } return LOGO_IMG; }
+async function letterJpeg(k, t) {
+  const L = LTR[k], tx = ltrText(k, t), co = (ST.co && ST.co.name) || "RT LENDING CORP.", W = 1240, PD = 104, c = document.createElement("canvas"), x = c.getContext("2d");
+  c.width = W; c.height = 5200;
+  x.fillStyle = "#FFFFFF"; x.fillRect(0, 0, W, c.height);
+  const wrap = (t2, font, w) => { x.font = font; const out = []; let l = ""; String(t2).split(" ").forEach((wd) => { const tt = l ? l + " " + wd : wd; if (x.measureText(tt).width > w && l) { out.push(l); l = wd; } else l = tt; }); if (l) out.push(l); return out; };
+  const logo = await logoImg(), lh = 150, lw = lh * logo.width / logo.height;
+  x.drawImage(logo, PD, 54, lw, lh);
+  x.fillStyle = "#0B2550"; x.font = "bold 50px Georgia"; x.fillText(co, PD + lw + 34, 124);
+  x.fillStyle = "#8C6424"; x.font = "italic 25px Georgia"; x.fillText((ST.co && ST.co.tagline) || "", PD + lw + 36, 166);
+  x.fillStyle = "#B8873F"; x.fillRect(PD, 236, W - 2 * PD, 4); x.fillRect(PD, 246, W - 2 * PD, 1.5);
+  let y = 312;
+  x.fillStyle = "#1B2333"; x.font = "28px Arial"; x.textAlign = "right"; x.fillText(longDate(RT.ymd(Date.now())), W - PD, y); x.textAlign = "left";
+  if (!L.cert) {
+    y += 62; x.font = "bold 30px Arial"; x.fillText(t.name, PD, y);
+    const sub = t.A && t.A.type === "B" ? [t.A.id, t.A.school].filter(Boolean).join(" · ") : t.A && t.A.type === "I" ? "Co-investor" : t.app ? t.app.a.sch || "" : "";
+    if (sub) { y += 40; x.fillStyle = "#5B6475"; x.font = "26px Arial"; x.fillText(sub, PD, y); }
+  }
+  y += L.cert ? 110 : 96;
+  x.fillStyle = "#0B2550"; x.font = "bold " + (L.cert ? 46 : 40) + "px Georgia"; x.textAlign = "center";
+  wrap(tx.title, x.font, W - 2 * PD).forEach((ln) => { x.fillText(ln, W / 2, y); y += L.cert ? 58 : 52; });
+  x.textAlign = "left";
+  if (L.cert) { x.fillStyle = "#B8873F"; x.fillRect(W / 2 - 90, y - 18, 180, 3); y += 40; }
+  y += 30;
+  x.fillStyle = "#1B2333";
+  tx.lines.forEach((p) => {
+    const kv = /^([^:]{3,40}):\s(.+)$/.exec(p);
+    if (kv && kv[2].length <= 40 && /[₱\d]/.test(kv[2])) { x.font = "30px Arial"; x.fillText(kv[1] + ":", PD + 30, y); x.font = "bold 30px Arial"; x.textAlign = "right"; x.fillText(kv[2], W - PD - 30, y); x.textAlign = "left"; y += 50; return; }
+    wrap(p, "30px Arial", W - 2 * PD).forEach((ln) => { x.font = "30px Arial"; x.fillText(ln, PD, y); y += 46; });
+    y += 20;
+  });
+  if (t.it) { // Promissory Note copy: the borrower's own signature
+    const st = RT.status(t.it, Date.now(), ST.days), sg = Object.entries(t.it.sigs || {})[0];
+    y += 10; x.fillStyle = "#F4EEDF"; x.fillRect(PD, y, W - 2 * PD, 190);
+    if (sg && sg[1].path) RT.drawStrokes(x, RT.strokesOf(sg[1].path), PD + 10, y + 5, W - 2 * PD - 20, 180, "#0B2550");
+    else { x.fillStyle = "#9AA3B2"; x.font = "italic 28px Arial"; x.fillText("Hinihintay ang pirma", PD + 24, y + 108); }
+    x.fillStyle = "#0B2550"; x.fillRect(PD, y + 192, W - 2 * PD, 2);
+    y += 236; x.font = "bold 28px Arial"; x.fillText(t.name, PD, y);
+    y += 36; x.fillStyle = "#5B6475"; x.font = "24px Arial"; x.fillText("Borrower" + (sg ? " · " + RT.stamp(sg[1].at) : "") + " · " + st.label, PD, y);
+    y += 30;
+  } else {
+    y += 26; x.fillStyle = "#1B2333"; x.font = "30px Arial"; x.fillText(L.cert ? "Issued on " + longDate(RT.ymd(Date.now())) + "." : "Respectfully yours,", PD, y);
+    y += 150; x.fillStyle = "#0B2550"; x.fillRect(PD, y - 40, 430, 2);
+    x.font = "bold 30px Arial"; x.fillText(co, PD, y);
+  }
+  y += L.cert ? 96 : 70;
+  x.fillStyle = "#5B6475"; x.font = "22px Arial";
+  if (L.conf) { wrap("This letter is confidential and is meant only for " + t.name + ".", "22px Arial", W - 2 * PD).forEach((ln) => { x.fillText(ln, PD, y); y += 32; }); }
+  x.fillText("Ref. RT-" + k + "-" + String(t.key).replace(/^.*\|/, "").replace(/[^A-Za-z0-9-]/g, "").slice(-14) + "-" + RT.ymd(Date.now()).replace(/-/g, ""), PD, y);
+  y += L.cert ? 74 : 40; x.fillStyle = "#B8873F"; x.fillRect(0, y, W, 10); y += 10;
+  const out = document.createElement("canvas"); out.width = W; out.height = y;
+  out.getContext("2d").drawImage(c, 0, 0);
+  if (L.cert) { const o = out.getContext("2d"); o.strokeStyle = "#B8873F"; o.lineWidth = 6; o.strokeRect(26, 26, W - 52, y - 62); o.lineWidth = 1.5; o.strokeRect(40, 40, W - 80, y - 90); }
+  return await new Promise((res) => out.toBlob(res, "image/jpeg", 0.92));
+}
+function lettersList() {
+  const k = ST.letters.type in LTR ? ST.letters.type : "REM", L = LTR[k], list = ltrTargets(k);
+  if (L.who === "A" && !list.length) return '<p class="muted">Walang aprubadong loan application pa. Aprubahan muna sa <b>Mga loan application</b>.</p>';
+  if (L.who === "PN" && !list.length) return '<p class="muted">Wala pang Promissory Note. Lalabas ito kapag may LOAN RELEASE – REGULAR o bonus advance (RELEASED) sa Excel.</p>';
+  if ((!Object.keys(ST.accounts).length || !("start" in ST)) && L.who !== "A") return '<p class="muted">Basahin muna ang Excel sa <b>1 · Excel</b>.</p>';  // "start" comes with the first R4 read
+  if (!list.length) return '<p class="muted">Walang tugma sa sulat na ito ngayon.</p>';
+  return list.map((t) => {
+    const ek = k + "|" + t.key, sent = ltrLast(k, t.key), ed = (ST.letters.edit || {})[ek];
+    return '<div class="lr"><div class="nm">' + E(t.name) + '</div><div class="muted">' + E(t.info || "") + (sent ? " · <span class=ok>naipadala " + E(RT.stamp(sent)) + "</span>" : "") + "</div>" +
+      '<div class="row"><button class="btn pri" data-lt="send" data-k="' + E(t.key) + '">IPADALA KAY ' + E(firstName(t.first || t.name).toUpperCase()) + '</button><button class="btn sec" data-lt="save" data-k="' + E(t.key) + '">I-SAVE ANG JPEG</button></div>' +
+      (t.it ? "" : '<details data-ed="' + E(ek) + '"><summary>Baguhin ang sulat para kay ' + E(firstName(t.first || t.name)) + (ed ? " (binago)" : "") + "</summary>" +
+      '<textarea data-edt="' + E(ek) + '">' + E(ltrText(k, t).lines.join("\n")) + '</textarea><div class="row"><button class="btn sec" data-lt="keep" data-k="' + E(t.key) + '">I-SAVE ANG BINAGO</button>' +
+      '<button class="btn lite" data-lt="back" data-k="' + E(t.key) + '">IBALIK SA TEMPLATE</button></div></details>') + "</div>";
+  }).join("");
+}
+function lettersHTML() {
+  const k = ST.letters.type in LTR ? ST.letters.type : "REM", L = LTR[k];
+  return '<section class="k k-sulat" id="s-sulat"><h2>Mga sulat</h2><p class="muted">Pumili ng sulat. Lalabas ang mga taong para rito ayon sa Excel. Ginagawa rito ang JPEG, at ikaw ang magpapadala.</p>' +
+    '<label for="lt">Sulat</label><select id="lt">' + Object.entries(LTR).map(([kk, v]) => '<option value="' + kk + '"' + (kk === k ? " selected" : "") + ">" + E(v.name) + "</option>").join("") + "</select>" +
+    (L.who === "B" || L.who === "I" ? '<label style="font-weight:400"><input type="checkbox" id="lall"' + (ST.letters.all ? " checked" : "") + "> Ipakita ang lahat ng " + (L.who === "B" ? "borrower" : "investor") + "</label>" : "") +
+    (k === "YES" ? '<label for="lyr">Taon</label><input type="number" id="lyr" min="2020" max="2100" value="' + E(String(ST.letters.year || String(ST.asof || RT.ymd(Date.now())).slice(0, 4))) + '">' : "") +
+    '<div id="ll">' + lettersList() + '</div><p id="llm" class="muted"></p>' +
+    '<details><summary>Mga template ng sulat</summary><p class="muted">Ang «MGA SALITANG ITO» ay kusang napapalitan ng datos. Isang talata bawat linya.</p>' +
+    Object.entries(LTR).filter(([kk, v]) => v.body).map(([kk]) => { const T = ltrTpl(kk); return '<label for="lti' + kk + '">' + E(LTR[kk].name) + ' · pamagat</label><input type="text" id="lti' + kk + '" value="' + E(T.title) + '">' +
+      '<label for="ltb' + kk + '">' + E(LTR[kk].name) + ' · laman</label><textarea id="ltb' + kk + '" rows="8">' + E(T.body) + "</textarea>"; }).join("") +
+    '<button class="btn sec" id="ltsave">I-SAVE ANG MGA TEMPLATE</button><button class="btn lite" id="ltreset">IBALIK ANG MGA TEMPLATE SA DATI</button></details></section>';
+}
+function lettersBind() {
+  const sel = $("#lt"); if (!sel) return;
+  sel.onchange = async () => { ST.letters.type = sel.value; await draft(); main(); document.getElementById("s-sulat").scrollIntoView({ block: "start" }); };
+  const all = $("#lall"); if (all) all.onchange = async () => { ST.letters.all = all.checked ? 1 : 0; await draft(); $("#ll").innerHTML = lettersList(); };
+  const yr = $("#lyr"); if (yr) yr.onchange = async () => { ST.letters.year = String(yr.value || ""); await draft(); $("#ll").innerHTML = lettersList(); };
+  $("#ltsave").onclick = async () => {
+    Object.keys(LTR).filter((kk) => LTR[kk].body).forEach((kk) => {
+      const ti = $("#lti" + kk).value.trim(), bo = $("#ltb" + kk).value.trim();
+      ST.letters.tpl[kk] = { title: ti || LTR[kk].title, body: bo || LTR[kk].body };
+    });
+    await draft(); MSG = "Na-save ang mga template ng sulat."; main(); document.getElementById("s-sulat").scrollIntoView({ block: "start" });
+  };
+  $("#ltreset").onclick = async () => { ST.letters.tpl = {}; await draft(); MSG = "Ibinalik sa dati ang mga template ng sulat."; main(); document.getElementById("s-sulat").scrollIntoView({ block: "start" }); };
+  const box = $("#ll");
+  box.onclick = async (e) => {
+    const b = e.target.closest("button[data-lt]"); if (!b || SX.busy) return;
+    const k = ST.letters.type in LTR ? ST.letters.type : "REM", t = ltrTargets(k).find((z) => z.key === b.dataset.k), msg = $("#llm");
+    if (!t) return;
+    const ek = k + "|" + t.key;
+    if (b.dataset.lt === "keep") { ST.letters.edit[ek] = box.querySelector('textarea[data-edt="' + CSS.escape(ek) + '"]').value; await draft(); msg.innerHTML = '<span class="ok">Na-save ang binagong sulat para kay ' + E(firstName(t.first || t.name)) + ".</span>"; $("#ll").innerHTML = lettersList(); return; }
+    if (b.dataset.lt === "back") { delete ST.letters.edit[ek]; await draft(); $("#ll").innerHTML = lettersList(); return; }
+    const was = b.textContent; SX.busy = true; b.disabled = true; b.textContent = "Ginagawa…";
+    try {
+      const fn = (LTR[k].who === "PN" ? "PROMISSORY NOTE" : fill(ltrTpl(k).title, ltrMap(k, t)).join(" ")) + " " + t.name + " " + RT.ymd(Date.now()) + ".jpg";
+      const files = [new File([await letterJpeg(k, t)], fn.replace(/[\\/:*?"<>|]/g, ""), { type: "image/jpeg" })];
+      const text = "Magandang araw, " + firstName(t.first || t.name) + "! Narito ang sulat mula sa " + ((ST.co && ST.co.name) || "RT LENDING CORP.") + ".";
+      let done = false;
+      if (b.dataset.lt === "send" && navigator.canShare && navigator.canShare({ files })) {
+        try { await navigator.share({ files, text }); done = true; msg.innerHTML = '<span class="ok">Naipadala ang sulat kay ' + E(t.name) + ".</span>"; }
+        catch (err) { if (err && err.name === "AbortError") msg.textContent = "Hindi itinuloy ang pagpapadala."; else if (err && err.name === "NotAllowedError") msg.innerHTML = '<span class="wait">Handa na ang sulat. I-tap ulit ang IPADALA.</span>'; else throw err; }
+      } else {
+        saveFiles(files); done = true;
+        msg.innerHTML = '<span class="ok">Na-save sa Downloads: ' + E(files[0].name) + "</span>" + (b.dataset.lt === "send" ? " Ipadala ito sa Messenger ni " + E(firstName(t.first || t.name)) + "." : "");
+      }
+      if (done) { ST.letters.log.push({ type: k, key: t.key, at: Date.now() }); await draft(); $("#ll").innerHTML = lettersList(); }
+    } catch (err) { msg.innerHTML = '<span class="bad">' + E(err.message || String(err)) + "</span>"; }
+    finally { SX.busy = false; b.disabled = false; b.textContent = was; }
+  };
+}
+/* ---- MGA LOAN APPLICATION ---- */
+let AP_OPEN = null; // the application just decided stays open, so its Excel values show
+const APP_LINK = () => { const l = linkList().find((x) => /PASSBOOK SITE/i.test(x.label)); return (l ? l.url.replace(/#.*$/, "").replace(/\/?$/, "/") : "https://rtlcorp.github.io/rt/") + "#apply"; };
+function appLinesA(a) {
+  return ["Halagang hihiramin: " + P$(a.amt) + (a.why ? " · Para sa: " + a.why : ""), "Mobile: " + a.mob + (a.msgr ? " · Messenger: " + a.msgr : ""),
+    a.addr ? "Tirahan: " + a.addr : "", "Paaralan / Opisina: " + a.sch + (a.pos ? " · " + a.pos : ""), (a.bank ? "Bangko ng sweldo: " + a.bank + " · " : "") + "Net pay kada sweldo: " + P$(a.net),
+    a.gc ? "GCash: " + a.gc + (a.gcn ? " (" + a.gcn + ")" : "") : "", a.debt ? "Ibang utang: " + a.debt : "",
+    "Totoo ang lahat ng nakasulat dito, at pumapayag ako sa paggamit ng personal kong datos para lamang sa application at pautang na ito."].filter(Boolean);
+}
+function appsHTML() {
+  const list = Object.values(ST.apps || {}).sort((a, b) => b.at - a.at), link = APP_LINK();
+  const chip = (p) => p.status === "APRUBADO" ? '<span class="chip c-SIGNED">APRUBADO</span>' : p.status === "HINDI APRUBADO" ? '<span class="chip c-VOID">HINDI APRUBADO</span>' : '<span class="chip c-PENDING">BAGO</span>';
+  return '<section class="k k-app" id="s-app"><h2>Mga loan application</h2><p class="muted">Ipadala ang link sa gustong umutang. Pagkapadala nila, i-download ang sagot ng <b>Passbook Signatures</b> at piliin sa <b>2 · Mga sagot</b>: lalabas sila rito.</p>' +
+    '<p><b>' + E(link) + '</b></p><div class="row"><button class="btn sec" id="apcl">KOPYAHIN ANG LINK</button><button class="btn sec" id="apcm">KOPYAHIN ANG MENSAHE</button></div>' +
+    '<a class="btn lite" href="' + E(link) + '" target="_blank" rel="noopener">BUKSAN ANG FORM DITO (HARAPAN)</a><p id="apm" class="muted"></p>' +
+    (list.length ? list.map((p) => {
+      const a = p.a, nm = appName(p), ok = p.status === "APRUBADO";
+      return '<div class="lr"><div class="nm">' + E(nm) + " " + chip(p) + '</div><div class="muted">' + E(a.uri) + " · " + E(P$(a.amt)) + " · " + E(RT.stamp(p.at)) + "</div>" +
+        '<details' + (p.id === AP_OPEN ? " open" : "") + '><summary>Buksan</summary><div class="apk">' + [["Mobile", a.mob], ["Messenger", a.msgr], ["Tirahan", a.addr], ["Paaralan / Opisina", a.sch], ["Posisyon", a.pos], ["Bangko", a.bank],
+          ["Net pay", P$(a.net)], ["GCash", a.gc + (a.gcn ? " (" + a.gcn + ")" : "")], ["Halaga", P$(a.amt)], ["Para sa", a.why], ["Ibang utang", a.debt]].filter((r) => r[1]).map((r) => "<b>" + E(r[0]) + "</b><span>" + E(r[1]) + "</span>").join("") + "</div>" +
+        '<canvas class="sig" data-path="' + E(p.sig) + '"></canvas>' +
+        '<div class="row"><button class="btn sec" data-ap="copy" data-id="' + E(p.id) + '">I-SAVE ANG KOPYA (JPEG)</button></div>' +
+        (ok ? '<div class="xv"><p><b>Aprubado:</b> ' + E(P$(p.ok.amt)) + " · release " + E(RT.dLabel(p.ok.rel)) + "</p><p><b>Ilagay sa Excel:</b></p>" +
+          (/^Bagong/.test(a.uri) ? "<p>BORROWERS ▸ STATUS ACTIVE · SURNAME " + E(a.sur) + " · FIRST NAME " + E(a.first) + (a.mid ? " · MIDDLE NAME " + E(a.mid) : "") + " · SCHOOL / OFFICE " + E(a.sch) +
+            (a.gc ? " · GCASH NO. " + E(a.gc) : "") + (a.gcn ? " · GCASH ACCOUNT NAME " + E(a.gcn) : "") + " · ON RECORD SINCE " + E(RT.dLabel(p.ok.rel)) + "</p>" : "") +
+          (/^Bonus/.test(a.uri) ? "<p>BONUSES ▸ BORROWER " + E(nm) + " · PRINCIPAL " + E(P$(p.ok.amt)) + " · DATE RELEASED " + E(RT.dLabel(p.ok.rel)) + " · SOURCE RELEASED</p>"
+            : "<p>LEDGER ▸ DATE " + E(RT.dLabel(p.ok.rel)) + " · TYPE LOAN RELEASE – REGULAR · BORROWER " + E(nm) + " · AMOUNT " + E(P$(p.ok.amt)) + "</p>") +
+          '<button class="btn pri" data-ap="nla" data-id="' + E(p.id) + '">GUMAWA NG NOTICE OF LOAN APPROVAL</button></div>'
+          : '<label for="apa' + E(p.id) + '">Halagang aaprubahan</label><input type="number" id="apa' + E(p.id) + '" min="0" value="' + E(String(a.amt)) + '">' +
+            '<label for="apr' + E(p.id) + '">Petsa ng release</label><input type="date" id="apr' + E(p.id) + '" value="' + E(RT.ymd(Date.now())) + '">' +
+            '<div class="row"><button class="btn pri" data-ap="yes" data-id="' + E(p.id) + '">APRUBAHAN</button><button class="btn lite" data-ap="no" data-id="' + E(p.id) + '">HINDI APRUBADO</button></div>') +
+        "</details></div>";
+    }).join("") : '<p class="muted">Wala pang loan application.</p>') + "</section>";
+}
+function appsBind() {
+  const sec = $("#s-app"); if (!sec) return;
+  sec.querySelectorAll("canvas.sig").forEach((c) => { c.width = 420; c.height = 140; RT.drawStrokes(c.getContext("2d"), RT.strokesOf(c.dataset.path), 0, 0, 420, 140); });
+  const say = (h) => { $("#apm").innerHTML = h; };
+  const copy = async (t) => { try { await navigator.clipboard.writeText(t); say('<span class="ok">Nakopya na.</span>'); } catch (_) { say(E(t)); } };
+  $("#apcl").onclick = () => copy(APP_LINK());
+  $("#apcm").onclick = () => { const co = (ST.co && ST.co.name) || "RT LENDING CORP.";
+    copy("Magandang araw! Ito ang loan application ng " + co + (/[.!?]$/.test(co) ? "" : ".") +
+      " Punan ang form, pumirma sa dulo, at i-tap ang IPADALA ANG APPLICATION. Walang hinihinging ATM PIN. Salamat!\n" + APP_LINK()); }
+  sec.onclick = async (e) => {
+    const b = e.target.closest("button[data-ap]"); if (!b) return;
+    const p = ST.apps[b.dataset.id]; if (!p) return;
+    if (b.dataset.ap === "copy") {
+      const nm = appName(p), blob = await RT.copyJpeg({ head: "APPLICATION", co: (ST.co && ST.co.name) || "RT LENDING CORP.", tagline: (ST.co && ST.co.tagline) || "", title: "LOAN APPLICATION · " + p.a.uri, holder: nm, role: "Aplikante",
+        lines: appLinesA(p.a), sigs: [{ name: nm, role: "Aplikante", at: p.at, path: p.sig }], status: { code: "SIGNED", text: p.status }, code: p.id, id: RT.stamp(p.at) });
+      saveFiles([new File([blob], ("LOAN APPLICATION " + nm + " " + RT.ymd(p.at) + ".jpg").replace(/[\\/:*?"<>|]/g, ""), { type: "image/jpeg" })]);
+      say('<span class="ok">Na-save sa Downloads ang kopya ng application ni ' + E(nm) + ".</span>"); return;
+    }
+    if (b.dataset.ap === "yes") {
+      const amt = Number($("#apa" + CSS.escape(p.id)).value) || 0, rel = $("#apr" + CSS.escape(p.id)).value;
+      if (!(amt > 0) || !rel) { say('<span class="bad">Ilagay ang halaga at petsa ng release.</span>'); return; }
+      p.status = "APRUBADO"; p.ok = { amt, rel, at: Date.now() }; AP_OPEN = p.id; await draft(); MSG = "Aprubado ang loan application ni " + appName(p) + ". Ilagay sa Excel ang mga nasa ibaba, at gumawa ng Notice of Loan Approval.";
+      main(); document.getElementById("s-app").scrollIntoView({ block: "start" }); return;
+    }
+    if (b.dataset.ap === "no") { p.status = "HINDI APRUBADO"; p.no = { at: Date.now() }; await draft(); MSG = "Hindi inaprubahan ang application ni " + appName(p) + "."; main(); document.getElementById("s-app").scrollIntoView({ block: "start" }); return; }
+    if (b.dataset.ap === "nla") { ST.letters.type = "NLA"; await draft(); main(); document.getElementById("s-sulat").scrollIntoView({ block: "start" }); }
+  };
+}
+/* R4:END */
+
 function bind() {
   $("#xl").onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return; $("#xlm").textContent = "Binabasa ang Excel…";
@@ -1416,7 +1795,7 @@ function bind() {
       SX.bytes = bytes; SX.book = null; SX.list = null; SX.files = {};
       Object.keys(ST.accounts).forEach((k) => { if (!X.accts[k]) X.accts[k] = Object.assign({}, ST.accounts[k], { status: "WALA NA SA EXCEL" }); });
       ST.views = X.views;
-      ST.accounts = X.accts; ST.co = { name: X.set.co, tagline: X.set.tagline, pay: X.set.pay }; ST.asof = X.set.asof; ST.period = X.set.activeLbl; ST.excelAt = Date.now();
+      ST.accounts = X.accts; ST.co = { name: X.set.co, tagline: X.set.tagline, pay: X.set.pay }; ST.asof = X.set.asof; ST.start = X.set.start; ST.period = X.set.activeLbl; ST.excelAt = Date.now(); ST.rate = X.set.rate;
       await refreshLinks();
       const r = merge(X); await draft();
       const n = Object.values(X.accts).filter(listed);
@@ -1426,13 +1805,13 @@ function bind() {
     } catch (err) { $("#xlm").innerHTML = '<span class="bad">' + E(err.message || err) + "</span>"; }
   };
   $("#rs").onchange = async (e) => {
-    let t = { sig: 0, ask: 0, bad: 0, old: 0 };
+    let t = { sig: 0, ask: 0, bad: 0, old: 0, app: 0 };
     for (const f of e.target.files) {
       const texts = /\.zip$/i.test(f.name) || /zip/i.test(f.type) ? await unzipCsv(f).catch(() => []) : [await f.text()];
       for (const tx of texts) { const r = await applyResponses(tx); Object.keys(t).forEach((k) => (t[k] += r[k])); }
     }
     await draft();
-    MSG = "Bagong pirma: " + t.sig + " · bagong tanong o tutol: " + t.ask + (t.bad ? " · hindi tugma (hindi tinanggap): " + t.bad : "") + (t.old ? " · dati nang nabasa: " + t.old : "") + ".";
+    MSG = "Bagong pirma: " + t.sig + " · bagong tanong o tutol: " + t.ask + (t.app ? " · bagong loan application: " + t.app : "") + (t.bad ? " · hindi tugma (hindi tinanggap): " + t.bad : "") + (t.old ? " · dati nang nabasa: " + t.old : "") + ".";
     main();
   };
   document.querySelectorAll("[data-solve]").forEach((b) => (b.onclick = async () => {
@@ -1469,7 +1848,7 @@ function bind() {
   $("#save2").onclick = async () => {
     ST.days = Math.max(1, Math.min(60, Number($("#dy").value) || 7));
     document.querySelectorAll("[data-auto]").forEach((c) => { ST.auto[c.dataset.auto] = c.checked ? 1 : 0; });
-    ["B", "I", "W"].forEach((k) => { const v = $("#tp" + k).value.trim(); if (v) ST.tpl[k] = v; });
+    ["B", "I", "W", "PN", "PNB"].forEach((k) => { const v = $("#tp" + k).value.trim(); if (v) ST.tpl[k] = v; });
     const fs = parseForm($("#fs").value), fc = parseForm($("#fc").value);
     ST.form = { signRaw: $("#fs").value.trim(), concernRaw: $("#fc").value.trim(), sign: fs, concern: fc };
     await draft(); MSG = (fs && fc ? "Nakakabit na ang dalawang Google Form." : "Na-save. Hindi pa kumpleto ang Passbook Signatures at Passbook Concerns (kailangan ang pre-filled link na may 1, 2, 3).") + " Huwag kalimutang i-download at i-upload ang data.json."; main();
