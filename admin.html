@@ -461,7 +461,7 @@ function ghWhy(r) {
   if (!r || !r.status) return "Walang internet o hindi maabot ang GitHub. Subukan ulit.";
   if (r.status === 401) return "Mali o expired na ang GitHub key. Gumawa ng bago sa ISANG BESES LANG: GITHUB KEY.";
   if (r.status === 403) return "Walang pahintulot ang GitHub key na mag-save. Gumawa ng bago: Contents dapat Read and write, sa " + GH_OWNER + ".";
-  if (r.status === 404) return "Hindi makita ang " + GH_REPO + " gamit ang key. Gumawa ng bago at piliin ang All repositories.";
+  if (r.status === 404) return "Hindi makita ang " + GH_REPO + " gamit ang key. Gumawa ng bago: sa Resource owner piliin ang " + GH_OWNER + ", at sa Repository access ang All repositories.";
   if (r.status === 409) return "May kasabay na pagbabago sa GitHub. Subukan ulit.";
   return "Hindi tinanggap ng GitHub (error " + r.status + "). Subukan ulit.";
 }
@@ -486,7 +486,7 @@ function ghHTML() {
   h += '<button class="btn ' + (GH ? "lite" : "gold") + ' full" id="dl">I-DOWNLOAD ANG data.json</button>' + (REPO ? '<a class="btn sec full" href="' + E(REPO) + '" target="_blank" rel="noopener">BUKSAN ANG UPLOAD SA GITHUB</a>' : "") + '<p id="dlm" class="muted"></p><p id="ghz" class="muted"></p>';
   h += '<details' + (GH && !old ? "" : " open") + '><summary>' + (GH ? "GitHub key (naka-set)" : "Isang beses lang: GitHub key") + "</summary>";
   if (GH) h += '<p class="muted">Naka-set noong ' + E(RT.stamp(GH.at)) + '. Sa phone na ito lang nakatago ang key, naka-lock sa password mo.</p>';
-  h += '<ol class="muted" style="padding-left:20px;margin:8px 0"><li>I-tap ang <b>GUMAWA NG GITHUB KEY</b>. Bubukas ang GitHub (naka-sign in dapat).</li><li>Sa <b>Repository access</b>, piliin ang <b>All repositories</b>.</li>' +
+  h += '<ol class="muted" style="padding-left:20px;margin:8px 0"><li>I-tap ang <b>GUMAWA NG GITHUB KEY</b>. Bubukas ang GitHub (naka-sign in dapat).</li><li>Sa <b>Resource owner</b>, i-tap at piliin ulit ang <b>' + E(GH_OWNER) + '</b>.</li><li>Sa <b>Repository access</b>, piliin ang <b>All repositories</b>.</li>' +
     '<li>Mag-scroll pababa ▸ <b>Generate token</b> (i-tap ulit kapag nagtanong).</li><li>I-copy ang key (nagsisimula sa <b>github_pat_</b>).</li><li>Bumalik dito, i-paste sa ibaba ▸ <b>I-SAVE ANG KEY</b>.</li></ol>' +
     '<a class="btn sec full" href="' + E(GH_NEW) + '" target="_blank" rel="noopener">GUMAWA NG GITHUB KEY</a>' +
     '<label for="ghk">GitHub key</label><input type="password" id="ghk" autocomplete="off" spellcheck="false" placeholder="github_pat_…">' +
