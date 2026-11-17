@@ -106,7 +106,7 @@
   };
 
   /* ---------- signed copy (JPEG) ---------- */
-  RT.copyJpeg = async function (o) { // o: {co, tagline, title, lines, holder, viewer, role, status, sigs:[{name, role, at, path}], code, id}
+  RT.copyJpeg = async function (o) { // o: {head?, co, tagline, title, lines, holder, viewer, role, status, sigs:[{name, role, at, path}], code, id}
     const W = 1080, P = 72, c = document.createElement("canvas"), x = c.getContext("2d");
     const lineH = 40, wrapW = W - 2 * P;
     x.font = "34px Arial";
@@ -116,7 +116,7 @@
     c.width = W; c.height = H; x.fillStyle = "#FFFDF8"; x.fillRect(0, 0, W, H);
     x.fillStyle = "#0B2550"; x.fillRect(0, 0, W, 210);
     x.fillStyle = "#D9B26A"; x.font = "bold 30px Arial"; x.fillText(o.co, P, 78);
-    x.fillStyle = "#FFFFFF"; x.font = "bold 50px Georgia"; x.fillText("PAGKILALA", P, 142);
+    x.fillStyle = "#FFFFFF"; x.font = "bold 50px Georgia"; x.fillText(o.head || "PAGKILALA", P, 142);
     x.fillStyle = "#C9D3E6"; x.font = "24px Arial"; x.fillText(o.tagline || "", P, 182);
     let y = 270; x.fillStyle = "#8C6424"; x.font = "bold 34px Arial";
     wrap(o.title, "bold 34px Arial").forEach((l) => { x.fillText(l, P, y); y += 44; });
