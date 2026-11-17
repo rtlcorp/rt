@@ -49,6 +49,7 @@ label{display:block;margin:10px 0 4px;font-weight:700;font-size:15px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:9px;border:0;font:700 16px Arial;cursor:pointer;margin:8px 8px 0 0}
 .pri{background:var(--navy);color:#fff}.sec{background:#fff;color:var(--navy);border:2px solid var(--navy)}.lite{background:var(--cream);color:var(--navy)}.gold{background:var(--gold);color:#fff}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+a.btn{text-decoration:none}
 .full{width:100%;margin-right:0}
 .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0}
 .ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}.wait{color:var(--amber);font-weight:700}
@@ -84,6 +85,11 @@ const $ = (s) => document.querySelector(s), E = RT.esc, P$ = RT.peso, enc = new 
 const app = $("#app");
 const BASE = location.origin + location.pathname.replace(/admin\.html.*$/, "");
 const REPO = (() => { const o = location.hostname.split(".")[0], r = location.pathname.split("/").filter(Boolean)[0]; return location.hostname.endsWith("github.io") && r ? "https://github.com/" + o + "/" + r + "/upload/main" : ""; })();
+const GH_REPO = (() => { const o = location.hostname.split(".")[0], r = location.pathname.split("/").filter(Boolean)[0]; return location.hostname.endsWith("github.io") && r ? o + "/" + r : "rtlcorp/rt"; })();
+const GH_OWNER = GH_REPO.split("/")[0];
+const GH_NEW = "https://github.com/settings/personal-access-tokens/new?name=RT+Admin&description=Pag-save+ng+RT+Admin+sa+GitHub&target_name=" + GH_OWNER + "&expires_in=366&contents=write";
+const SITE_FILES = ["admin.html", "index.html", "core.js", "xlsx.mini.min.js", "manifest.json", "icon.png", "robots.txt", "README.md"];
+let GH = null; // { token, at }: only on this phone, locked with the admin password
 let D = null, MASTER = null, AKEY = null, ST = null, LINKS = {}, MSG = "";
 
 const TPL = {
@@ -165,6 +171,9 @@ function lockView() {
     }
     if (!ST) ST = fresh();
     ST.salt = salt; ST.verifier = ver;
+    GH = null;
+    const gk = RT.get("rt:admin:gh", null);
+    if (gk && gk.salt === salt) { try { GH = await RT.open(AKEY, gk.box); } catch (_) {} }
     await refreshLinks(); main();
   };
   $("#unlock").onclick = go; $("#pw").onkeydown = (e) => { if (e.key === "Enter" && !first) go(); };
@@ -443,6 +452,92 @@ function counts(akey) {
   Object.values(ST.items).filter((it) => it.acct === akey && !it.void).forEach((it) => { c[RT.status(it, now, ST.days).code]++; });
   return c;
 }
+/* ---------- GitHub: one-tap save (the key never leaves this phone) ---------- */
+async function ghKeep(token) { GH = { token, at: Date.now() }; RT.put("rt:admin:gh", { salt: ST.salt, box: await RT.seal(AKEY, GH) }); }
+function ghForget() { GH = null; try { localStorage.removeItem("rt:admin:gh"); } catch (_) {} }
+function b64bytes(u8) { let x = ""; for (let i = 0; i < u8.length; i += 0x8000) x += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(x); }
+function ghHead(json) { const h = { Accept: "application/vnd.github.object+json" }; if (GH && GH.token) h.Authorization = "Bearer " + GH.token; if (json) h["Content-Type"] = "application/json"; return h; }
+function ghWhy(r) {
+  if (!r || !r.status) return "Walang internet o hindi maabot ang GitHub. Subukan ulit.";
+  if (r.status === 401) return "Mali o expired na ang GitHub key. Gumawa ng bago sa ISANG BESES LANG: GITHUB KEY.";
+  if (r.status === 403) return "Walang pahintulot ang GitHub key na mag-save. Gumawa ng bago: Contents dapat Read and write, sa " + GH_OWNER + ".";
+  if (r.status === 404) return "Hindi makita ang " + GH_REPO + " gamit ang key. Gumawa ng bago at piliin ang All repositories.";
+  if (r.status === 409) return "May kasabay na pagbabago sa GitHub. Subukan ulit.";
+  return "Hindi tinanggap ng GitHub (error " + r.status + "). Subukan ulit.";
+}
+async function ghPut(path, b64, msg) {
+  const api = "https://api.github.com/repos/" + GH_REPO + "/contents/" + encodeURIComponent(path);
+  for (let k = 0; k < 2; k++) {
+    let sha;
+    const g = await fetch(api + "?ref=main&t=" + Date.now(), { headers: ghHead(), cache: "no-store" });
+    if (g.ok) sha = (await g.json()).sha; else if (g.status !== 404) throw g;
+    const p = await fetch(api, { method: "PUT", headers: ghHead(true), body: JSON.stringify(Object.assign({ message: msg, content: b64, branch: "main" }, sha ? { sha } : {})) });
+    if (p.ok) return p.json();
+    if (p.status !== 409 || k) throw p;
+  }
+}
+function siteName(n) { const m = /^(.*?)(?: \(\d+\))?(\.[^.]+)$/.exec(n || ""); return m ? m[1] + m[2] : n; }
+function ghHTML() {
+  const old = GH && Date.now() - GH.at > 330 * 864e5;
+  let h = '<section><h2>3 · I-save sa GitHub</h2>';
+  h += GH ? '<p class="muted">Isang tap lang: diretsong mapupunta ang data.json sa GitHub. Pagkalipas ng 1–2 minuto, updated na ang lahat ng passbook.</p><button class="btn gold full" id="ghs">I-SAVE SA GITHUB</button><p id="ghm" class="muted"></p>'
+    : '<p class="muted">I-download ang data.json, tapos i-upload sa GitHub (Add file ▸ Upload files ▸ Commit). Pagka-upload, updated na ang lahat ng passbook. Para isang tap na lang, gawin ang GitHub key sa ibaba.</p>';
+  if (old) h += '<p class="wait">Malapit nang mag-expire ang GitHub key (ginawa noong ' + E(RT.stamp(GH.at)) + '). Gumawa ng bago sa ibaba.</p>';
+  h += '<button class="btn ' + (GH ? "lite" : "gold") + ' full" id="dl">I-DOWNLOAD ANG data.json</button>' + (REPO ? '<a class="btn sec full" href="' + E(REPO) + '" target="_blank" rel="noopener">BUKSAN ANG UPLOAD SA GITHUB</a>' : "") + '<p id="dlm" class="muted"></p><p id="ghz" class="muted"></p>';
+  h += '<details' + (GH && !old ? "" : " open") + '><summary>' + (GH ? "GitHub key (naka-set)" : "Isang beses lang: GitHub key") + "</summary>";
+  if (GH) h += '<p class="muted">Naka-set noong ' + E(RT.stamp(GH.at)) + '. Sa phone na ito lang nakatago ang key, naka-lock sa password mo.</p>';
+  h += '<ol class="muted" style="padding-left:20px;margin:8px 0"><li>I-tap ang <b>GUMAWA NG GITHUB KEY</b>. Bubukas ang GitHub (naka-sign in dapat).</li><li>Sa <b>Repository access</b>, piliin ang <b>All repositories</b>.</li>' +
+    '<li>Mag-scroll pababa ▸ <b>Generate token</b> (i-tap ulit kapag nagtanong).</li><li>I-copy ang key (nagsisimula sa <b>github_pat_</b>).</li><li>Bumalik dito, i-paste sa ibaba ▸ <b>I-SAVE ANG KEY</b>.</li></ol>' +
+    '<a class="btn sec full" href="' + E(GH_NEW) + '" target="_blank" rel="noopener">GUMAWA NG GITHUB KEY</a>' +
+    '<label for="ghk">GitHub key</label><input type="password" id="ghk" autocomplete="off" spellcheck="false" placeholder="github_pat_…">' +
+    '<button class="btn pri" id="ghk2">I-SAVE ANG KEY</button>' + (GH ? '<button class="btn lite" id="ghx">TANGGALIN ANG KEY</button>' : "") +
+    '<p id="ghkm" class="muted">Huwag ipadala ang key kahit kanino.</p></details>';
+  if (GH) h += '<details><summary>Mag-upload ng file ng site (hal. bagong admin.html)</summary><p class="muted">Para lang sa: ' + SITE_FILES.join(", ") +
+    '. Hindi tatanggapin dito ang Excel, data.json at mga sagot ng Google Form.</p><input type="file" id="ghf" multiple><button class="btn sec" id="ghu">I-UPLOAD SA GITHUB</button><p id="ghum" class="muted"></p></details>';
+  return h + "</section>";
+}
+function ghBind() {
+  fetch("https://api.github.com/repos/" + GH_REPO + "?t=" + Date.now(), { headers: ghHead(), cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((j) => {
+    if (!j || typeof j.size !== "number" || !$("#ghz")) return;
+    const mb = j.size / 1024;
+    $("#ghz").innerHTML = j.size > 800000 ? '<span class="bad">Laki ng site sa GitHub: ' + mb.toFixed(0) + " MB. Lampas na sa 800 MB: oras nang mag-reset.</span>"
+      : "Laki ng site sa GitHub: " + (mb < 10 ? mb.toFixed(1) : mb.toFixed(0)) + " MB (mag-reset kapag lampas na sa 800 MB).";
+  }).catch(() => {});
+  if ($("#ghk2")) $("#ghk2").onclick = async () => {
+    const t = $("#ghk").value.trim();
+    if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(t)) { $("#ghkm").textContent = "Hindi ito mukhang GitHub key. Dapat nagsisimula sa github_pat_."; return; }
+    $("#ghkm").textContent = "Sinusubukan ang key…";
+    const prev = GH; GH = { token: t, at: Date.now() };
+    try {
+      const r = await fetch("https://api.github.com/repos/" + GH_REPO + "/contents/data.json?ref=main&t=" + Date.now(), { headers: ghHead(), cache: "no-store" });
+      if (!r.ok && r.status !== 404) throw r;
+      await ghKeep(t); MSG = "Naka-save ang GitHub key. Isang tap na lang ang I-SAVE SA GITHUB."; main();
+    } catch (e) { GH = prev; $("#ghkm").textContent = ghWhy(e); }
+  };
+  if ($("#ghx")) $("#ghx").onclick = () => { ghForget(); MSG = "Tinanggal ang GitHub key sa phone na ito."; main(); };
+  if ($("#ghs")) $("#ghs").onclick = async () => {
+    if (!Object.keys(ST.accounts).length) { $("#ghm").textContent = "Basahin muna ang Excel."; return; }
+    const b = $("#ghs"); b.disabled = true; $("#ghm").textContent = "Sine-save sa GitHub…";
+    try {
+      const text = await build();
+      await ghPut("data.json", b64bytes(enc.encode(text)), "Update data.json");
+      $("#ghm").innerHTML = '<span class="ok">Na-save sa GitHub (' + Math.round(text.length / 1024) + " KB) · " + E(RT.stamp(Date.now())) + ".</span> Pagkalipas ng 1–2 minuto, updated na ang lahat ng passbook.";
+    } catch (e) { $("#ghm").innerHTML = '<span class="bad">' + E(ghWhy(e)) + "</span>"; }
+    b.disabled = false;
+  };
+  if ($("#ghu")) $("#ghu").onclick = async () => {
+    const fs = [...$("#ghf").files];
+    if (!fs.length) { $("#ghum").textContent = "Pumili muna ng file."; return; }
+    const bad = fs.filter((f) => !SITE_FILES.includes(siteName(f.name)));
+    if (bad.length) { $("#ghum").textContent = "Hindi puwede rito: " + bad.map((f) => f.name).join(", ") + (bad.some((f) => /\.(xlsx|xlsm|xls|csv|zip)$/i.test(f.name)) ? ". Ang Excel at mga sagot ng Google Form ay hindi kailanman ilalagay sa GitHub." : ". Ang mga file ng site lang ang ina-upload dito."); return; }
+    const b = $("#ghu"); b.disabled = true; const done = [];
+    try {
+      for (const f of fs) { $("#ghum").textContent = "Ina-upload ang " + siteName(f.name) + "…"; await ghPut(siteName(f.name), b64bytes(new Uint8Array(await f.arrayBuffer())), "Update " + siteName(f.name)); done.push(siteName(f.name)); }
+      $("#ghum").innerHTML = '<span class="ok">Na-upload: ' + E(done.join(", ")) + ".</span> Pagkalipas ng 1–2 minuto, gamit na ang bago.";
+    } catch (e) { $("#ghum").innerHTML = (done.length ? "Na-upload: " + E(done.join(", ")) + ". " : "") + '<span class="bad">' + E(ghWhy(e)) + "</span>"; }
+    b.disabled = false;
+  };
+}
 function main() {
   withForms(ST);
   const now = Date.now(), accts = Object.values(ST.accounts);
@@ -478,13 +573,13 @@ function main() {
     '<label for="fs">RT LENDING CORP. - Passbook Signatures (pre-filled link na may 1, 2, 3)</label><input type="text" id="fs" value="' + E(ST.form.signRaw || "") + '">' +
     '<label for="fc">RT LENDING CORP. - Passbook Concerns (pre-filled link na may 1, 2, 3)</label><input type="text" id="fc" value="' + E(ST.form.concernRaw || "") + '">' +
     '<p class="muted" id="fm">' + (ST.form.sign && ST.form.concern ? "Nakakabit na ang dalawang form." : "Hindi pa nakakabit ang Passbook Signatures at Passbook Concerns: hindi pa makakapagpadala ng pirma at tutol.") + '</p><button class="btn sec" id="save2">I-SAVE ANG MGA ITO</button></details></section>';
-  h += '<section><h2>3 · I-save sa GitHub</h2><p class="muted">I-download ang data.json, tapos i-upload sa GitHub (Add file ▸ Upload files ▸ Commit). Pagka-upload, updated na ang lahat ng passbook.</p>' +
-    '<button class="btn gold full" id="dl">I-DOWNLOAD ANG data.json</button>' + (REPO ? '<a class="btn sec full" href="' + E(REPO) + '" target="_blank" rel="noopener">BUKSAN ANG UPLOAD SA GITHUB</a>' : "") + '<p id="dlm" class="muted"></p></section>';
+  h += ghHTML();
   app.innerHTML = h; MSG = "";
   items();
   bind();
   slipsBind();
   linksBind();
+  ghBind();
 }
 function items() {
   const sel = $("#ia").value, now = Date.now();
