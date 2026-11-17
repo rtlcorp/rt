@@ -52,6 +52,7 @@ h2{font:700 15px/1.2 Arial,sans-serif;color:var(--gold2);letter-spacing:.06em;ma
 .card>.rows:first-child{margin-top:0}.card>.rows:first-child>.r:first-child{border-top:0;padding-top:0}
 .r b{white-space:nowrap}
 .r.tot{border-top:2px solid var(--navy);font-weight:700}
+.r.less{background:#166534;color:#fff;font-weight:700;border-top:0;border-radius:8px;padding:9px 10px;margin:4px -6px}
 .r .n{white-space:nowrap;font-variant-numeric:tabular-nums}
 .chip{display:inline-block;border-radius:999px;padding:3px 12px;font-size:14px;font-weight:700}
 .ok{background:#E3F4E6;color:var(--green)}.wait{background:#FFF0D9;color:var(--amber)}.bad{background:#FDE8E6;color:var(--red)}.calm{background:#E8EDF7;color:var(--navy)}
@@ -106,7 +107,19 @@ textarea{width:100%;min-height:110px;font:17px/1.4 Arial,sans-serif;padding:12px
 .note{font-size:14px;color:var(--muted);margin-top:8px}
 .thread{margin:10px 0;padding:10px 12px;border-left:4px solid var(--amber);background:#FFF8EC;border-radius:6px;font-size:15px}
 .thread.v{border-color:var(--navy);background:#EEF2F9}
-button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+/* loan application */
+.ap label{display:block;font-weight:700;font-size:16px;margin:14px 0 6px}
+.ap label small{font-weight:400;color:var(--muted)}
+.ap input[type=text],.ap input[type=tel],.ap input[type=number],.ap select{width:100%;min-height:52px;font:18px Arial,sans-serif;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.ap textarea{min-height:84px}
+.ap .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ap .two label{margin-top:0}
+.ap .due{margin-top:8px;padding:10px 12px;border-radius:10px;background:#EEF2F9;color:var(--navy);font-weight:700}
+.ap .miss{border-color:var(--red)!important}
+.ap label.check{font-weight:400;font-size:16px}
+.ap .err{color:var(--red);font-weight:700;margin-top:10px}
+.ap h3{font:700 15px/1.2 Arial,sans-serif;color:var(--gold2);letter-spacing:.06em;margin:22px 0 2px;text-transform:uppercase}
 @media (prefers-reduced-motion:no-preference){.pane{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
 </head>
@@ -128,6 +141,7 @@ function fail(title, text) {
 
 async function boot() {
   const link = location.hash.replace(/^#/, "");
+  if (link === "apply") return applyPage();
   if (!/^[A-Za-z0-9_-]{20,40}$/.test(link)) return fail("Buksan ang sariling link mo.", "Ang link ay ipinapadala ng RT LENDING CORP. sa Messenger. Para sa iyo lang ito.");
   let D;
   try {
@@ -168,7 +182,7 @@ function stLine(st) {
 }
 
 function rows(list) {
-  return '<div class="rows">' + list.filter(Boolean).map((r) => '<div class="r' + (r[2] ? " tot" : "") + '"><span>' + E(r[0]) + '</span><span class="n">' + E(r[1]) + "</span></div>").join("") + "</div>";
+  return '<div class="rows">' + list.filter(Boolean).map((r) => '<div class="r' + (r[2] === 2 ? " less" : r[2] ? " tot" : "") + '"><span>' + E(r[0]) + '</span><span class="n">' + E(r[1]) + "</span></div>").join("") + "</div>";
 }
 
 function bars(data, a, b) {
@@ -199,7 +213,7 @@ function render() {
       '<div class="bigl">Ipinadala sa iyo</div><div class="big">' + P$(p.sent) + "</div>" +
       '<div style="margin-top:8px"><span class="chip ' + (p.status === "BAYAD NA" || p.status === "PAID" ? "ok" : p.kulang > 0.004 ? "bad" : "wait") + '">' + E(p.statusText) + "</span></div>" +
       rows([["Sweldo na pumasok", p.salary > 0 ? P$(p.salary) : "wala pa"], ["Dues (" + A.ratePct + " ng utang)", P$(p.due)], p.bint ? ["Bonus interest", P$(p.bint)] : null,
-            p.arr ? ["ARREARS, surcharge at extra singil", P$(p.arr)] : null, ["Dapat ikaltas", P$(p.tdue), 1], ["Nakaltas", P$(p.coll)], p.kulang > 0.004 ? ["Kulang pa", P$(p.kulang)] : null]) + "</div></section>";
+            p.arr ? ["ARREARS, surcharge at extra singil", P$(p.arr)] : null, p.less > 0.004 ? ["December LESS", "− " + P$(p.less), 2] : null, ["Dapat ikaltas", P$(p.tdue), 1], ["Nakaltas", P$(p.coll)], p.kulang > 0.004 ? ["Kulang pa", P$(p.kulang)] : null]) + "</div></section>";
     h += '<section class="band" style="padding-top:0"><h2>Balanse</h2><div class="card">' +
       rows([["Regular na utang", P$(A.principal)], ["Kaltas kada sweldo", P$(A.duePerPay)],
             ...A.bonuses.map((b) => [b.type + " · bayad ang dues hanggang " + RT.dLabel(b.paidThru), P$(b.left)]),
@@ -332,6 +346,97 @@ async function saveCopy(it, st) {
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
   $("#say").textContent = "Na-save ang kopya: " + name;
+}
+
+/* ---------- LOAN APPLICATION (#apply): a form with a signature pad, sent to RT LENDING CORP. through the Passbook Signatures form ---------- */
+const AQ = "rt:apply:queue";
+async function applyPage() {
+  let D = {};
+  try { const r = await fetch("data.json?t=" + Date.now(), { cache: "no-store" }); if (r.ok) D = await r.json(); } catch (_) {}
+  const cfg = D.apply || {}, co = cfg.co || "RT LENDING CORP.", rate = +cfg.rate || 0.025, form = D.form && D.form.sign;
+  document.title = "Loan Application · " + co;
+  const F = (id, label, type, hint, ex) => '<label for="' + id + '">' + label + (hint ? " <small>" + hint + "</small>" : "") + "</label>" +
+    (type === "area" ? '<textarea id="' + id + '"' + (ex || "") + "></textarea>" : '<input type="' + (type || "text") + '" id="' + id + '"' + (ex || "") + ">");
+  shell('<div class="cover"><div class="co">' + E(co) + '</div><div class="tag">' + E(cfg.tagline || "") + '</div><div class="pb">Loan Application</div>' +
+    '<div class="sub">Punan ang form, pumirma sa dulo, at i-tap ang IPADALA ANG APPLICATION.</div></div>' +
+    '<section class="band ap"><div class="card">' +
+    '<label for="a_uri">Anong loan?</label><select id="a_uri"><option value="">Pumili</option><option>Bagong loan</option><option>Dagdag sa loan</option><option>Bonus advance (MYB, YEB at iba pa)</option></select>' +
+    "<h3>Ikaw</h3>" + F("a_sur", "Apelyido", "text", "", ' autocomplete="family-name"') + F("a_first", "Pangalan", "text", "", ' autocomplete="given-name"') +
+    F("a_mid", "Gitnang pangalan", "text", "kung mayroon", ' autocomplete="additional-name"') +
+    F("a_mob", "Mobile number", "tel", "", ' inputmode="tel" autocomplete="tel"') + F("a_msg", "Pangalan sa Messenger", "text", "para makausap ka namin") +
+    F("a_addr", "Tirahan", "area") +
+    "<h3>Trabaho at sweldo</h3>" + F("a_sch", "Paaralan / Opisina") + F("a_pos", "Posisyon") + F("a_bank", "Bangko ng sweldo (ATM)") +
+    F("a_net", "Net pay kada sweldo (₱)", "number", "", ' inputmode="decimal" min="0"') +
+    F("a_gc", "GCash number", "tel", "dito ipapadala ang sobra ng sweldo", ' inputmode="tel"') + F("a_gcn", "Pangalan sa GCash") +
+    "<h3>Loan</h3>" + F("a_amt", "Halagang hihiramin (₱)", "number", "", ' inputmode="decimal" min="0"') + '<div class="due" id="a_due" hidden></div>' +
+    F("a_why", "Para saan", "area") + F("a_debt", "Ibang utang ngayon", "area", "kung mayroon") +
+    '<label class="check"><input type="checkbox" id="a_ok"><span>Totoo ang lahat ng nakasulat dito. Pumapayag ako na gamitin ng ' + E(co) +
+    " ang personal kong datos para lamang sa application at pautang na ito, ayon sa Data Privacy Act of 2012 (RA 10173).</span></label>" +
+    '<label>Pirma</label><div class="padw" id="a_padw"><canvas id="a_pad"></canvas><span class="ph">Pumirma rito</span></div>' +
+    '<button class="btn lite" id="a_clr" type="button">BURAHIN ANG PIRMA</button>' +
+    '<p class="err" id="a_err" hidden></p><button class="btn pri" id="a_go" type="button">IPADALA ANG APPLICATION</button>' +
+    '<p class="note">Walang hinihinging ATM PIN dito.</p></div></section><div class="foot">' + E(co) + "</div>");
+  const pad = RT.pad($("#a_pad"), () => { $("#a_padw .ph").hidden = pad && pad.ink() > 0; });
+  $("#a_clr").onclick = () => pad.clear();
+  const amt = $("#a_amt");
+  amt.oninput = () => {
+    const v = +amt.value || 0, d = $("#a_due");
+    d.hidden = !(v > 0);
+    d.textContent = "Dues: " + Math.round(rate * 1000) / 10 + "% ng " + P$(v) + " = " + P$(Math.round(v * rate * 100) / 100) + " kada sweldo (ika-15 at katapusan ng buwan)";
+  };
+  const need = ["a_uri", "a_sur", "a_first", "a_mob", "a_sch", "a_net", "a_amt"];
+  const clear = (e) => { if (e.target.classList) e.target.classList.remove("miss"); $("#a_err").hidden = true; };
+  app.addEventListener("input", clear); app.addEventListener("change", clear);
+  $("#a_go").onclick = async () => {
+    const val = (id) => String($("#" + id).value || "").trim();
+    need.forEach((id) => $("#" + id).classList.toggle("miss", !val(id)));
+    const err = $("#a_err"), miss = need.filter((id) => !val(id));
+    err.hidden = true;
+    if (miss.length) { err.textContent = "Punan ang may pulang guhit."; err.hidden = false; $("#" + miss[0]).scrollIntoView({ block: "center" }); return; }
+    if (!$("#a_ok").checked) { err.textContent = "I-tsek ang pagpayag sa itaas ng pirma."; err.hidden = false; return; }
+    if (pad.ink() < 5) { err.textContent = "Pumirma sa kahon."; err.hidden = false; return; }
+    if (!form) { err.textContent = "Hindi pa bukas ang application. Subukan ulit mamaya."; err.hidden = false; return; }
+    const a = { uri: val("a_uri"), sur: val("a_sur").toUpperCase(), first: val("a_first").toUpperCase(), mid: val("a_mid").toUpperCase(), mob: val("a_mob"), msgr: val("a_msg"),
+      addr: val("a_addr"), sch: val("a_sch"), pos: val("a_pos"), bank: val("a_bank"), net: +val("a_net") || 0, gc: val("a_gc"), gcn: val("a_gcn").toUpperCase(),
+      amt: +val("a_amt") || 0, why: val("a_why"), debt: val("a_debt") };
+    const at = Date.now(), d = { t: "APP", v: 1, id: "APP-" + RT.b64u(crypto.getRandomValues(new Uint8Array(6))), at, a, sig: pad.path() };
+    const name = [a.first, a.mid, a.sur].filter(Boolean).join(" ");
+    const q = RT.get(AQ, []); q.push({ name, d }); RT.put(AQ, q);
+    $("#a_go").disabled = true; $("#a_go").textContent = "Ipinapadala…";
+    await applyFlush(form);
+    applyDone(co, name, d);
+  };
+  applyFlush(form);
+}
+async function applyFlush(form) {
+  if (!form) return;
+  const q = RT.get(AQ, []), left = [];
+  for (const x of q) {
+    try { await RT.send(form, x.name, "LOAN APPLICATION · " + P$(x.d.a.amt), x.d); } catch (_) { left.push(x); }
+  }
+  RT.put(AQ, left);
+}
+function applyDone(co, name, d) {
+  const sent = !RT.get(AQ, []).some((x) => x.d.id === d.id), a = d.a;
+  shell('<div class="cover"><div class="co">' + E(co) + '</div><div class="pb">Loan Application</div><div class="who">' + E(name) + "</div></div>" +
+    '<section class="band"><div class="card"><p><span class="chip ' + (sent ? "ok" : "wait") + '">' + (sent ? "Natanggap na" : "Ipapadala kapag may internet na") + "</span></p>" +
+    "<p>" + (sent ? "Salamat! Natanggap ng " + E(co) + " ang application mo. Imemensahe ka namin." : "Naka-save sa phone na ito. Buksan ulit ang link na ito kapag may internet na, at kusa itong maipapadala.") + "</p>" +
+    rows([["Loan", a.uri], ["Halaga", P$(a.amt)], ["Petsa", RT.stamp(d.at)]]) +
+    '<button class="btn sec" id="a_copy">I-SAVE ANG KOPYA (JPEG)</button><p class="note" id="say"></p></div></section>');
+  $("#a_copy").onclick = async () => {
+    const blob = await RT.copyJpeg({ head: "APPLICATION", co, tagline: "", title: "LOAN APPLICATION · " + a.uri, holder: name, role: "Aplikante",
+      lines: appLines(a), sigs: [{ name, role: "Aplikante", at: d.at, path: d.sig }], status: { code: "SIGNED", text: sent ? "IPINADALA" : "NAKA-SAVE SA PHONE" }, code: d.id, id: RT.stamp(d.at) });
+    const fn = "LOAN APPLICATION " + name + " " + RT.ymd(d.at) + ".jpg", file = new File([blob], fn, { type: "image/jpeg" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); return; } catch (_) {} }
+    const l = document.createElement("a"); l.href = URL.createObjectURL(blob); l.download = fn; document.body.appendChild(l); l.click(); l.remove();
+    $("#say").textContent = "Na-save ang kopya: " + fn;
+  };
+}
+function appLines(a) {
+  return ["Halagang hihiramin: " + P$(a.amt) + (a.why ? " · Para sa: " + a.why : ""), "Mobile: " + a.mob + (a.msgr ? " · Messenger: " + a.msgr : ""),
+    a.addr ? "Tirahan: " + a.addr : "", "Paaralan / Opisina: " + a.sch + (a.pos ? " · " + a.pos : ""), (a.bank ? "Bangko ng sweldo: " + a.bank + " · " : "") + "Net pay kada sweldo: " + P$(a.net),
+    a.gc ? "GCash: " + a.gc + (a.gcn ? " (" + a.gcn + ")" : "") : "", a.debt ? "Ibang utang: " + a.debt : "",
+    "Totoo ang lahat ng nakasulat dito, at pumapayag ako sa paggamit ng personal kong datos para lamang sa application at pautang na ito."].filter(Boolean);
 }
 
 document.addEventListener("click", (e) => {
