@@ -212,7 +212,7 @@ function render() {
   if (todo.length) h += '<div class="band" style="padding-bottom:0"><button class="alert" data-go="sign"><span>May ' + todo.length + " pipirmahan</span>›</button></div>";
   const xs = scr();
   if (xs) h += '<div class="band" style="padding-bottom:0"><button class="xsb' + (xs.locked ? " done" : "") + '" data-xs="1"><span class="xsi">' + (xs.locked ? "🏆" : "🎁") + '</span><span class="xst"><b>Mystery Scratch &amp; Win!</b><small>MYSTERY CARD #' + E(xs.c.no) + " · " +
-    (xs.locked ? (xs.c.amt > 0 ? "Premyo mo: " + P$(xs.c.amt) : "Salamat sa pagsali!") : "Kaskasin mo na!") + "</small></span>›</button></div>";
+    (xs.locked ? (RT.prizeWin(xs.c.amt) ? "Premyo mo: " + RT.prizeText(xs.c.amt) : "Salamat sa pagsali!") : "Kaskasin mo na!") + "</small></span>›</button></div>";
 
   if (A.type === "B") {
     const p = A.period;
