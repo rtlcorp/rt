@@ -153,7 +153,10 @@
   };
 
   /* ---------- Mystery Scratch & Win (R5): her scratch card, shared by the passbook and RT Admin ---------- */
-  RT.scratchLabel = (no, amt) => "MYSTERY SCRATCH · CARD #" + no + " · " + (+amt > 0 ? RT.peso(amt) : "BOKYA");
+  // R6: a prize is a peso amount (0 = BOKYA) or the name of an item, such as Chocolates
+  RT.prizeText = (v) => (typeof v === "string" && v.trim() ? v.trim() : +v > 0 ? RT.peso(v) : "BOKYA");
+  RT.prizeWin = (v) => (typeof v === "string" ? !!v.trim() : +v > 0);
+  RT.scratchLabel = (no, amt) => "MYSTERY SCRATCH · CARD #" + no + " · " + RT.prizeText(amt);
   const XS_CSS = '.xs{color:#2f3542;text-align:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:8px 2px 4px}' +
     ".xs .xs-b{display:inline-block;background:#ffeaa7;color:#d35400;font-weight:800;font-size:13px;padding:5px 12px;border-radius:20px;margin-bottom:8px}" +
     ".xs h2.xs-h{margin:4px 0 6px;font-size:22px;font-weight:900;line-height:1.25;color:#2f3542;letter-spacing:0;text-transform:none}" +
@@ -161,6 +164,7 @@
     ".xs .xs-w{position:relative;width:270px;height:165px;margin:0 auto 14px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#fff9e6,#ffeaa7);border:3px dashed #ffa502;box-shadow:inset 0 0 12px rgba(0,0,0,.12)}" +
     ".xs .xs-p{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}" +
     ".xs .xs-a{font-size:46px;font-weight:900;color:#e84118;line-height:1.1}.xs .xs-a.bk{font-size:28px;color:#747d8c}" +
+    ".xs .xs-a.it{font-size:32px;padding:0 12px;overflow-wrap:anywhere}.xs .xs-a.it2{font-size:24px}.xs .xs-a.it3{font-size:19px}" +
     ".xs .xs-l{font-size:13px;font-weight:800;color:#2f3542;margin-top:4px}" +
     ".xs .xs-w canvas{position:absolute;inset:0;z-index:2;width:270px;height:165px;touch-action:none;cursor:crosshair}" +
     ".xs .xs-st{background:#f1f2f6;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;color:#2f3542}" +
@@ -170,11 +174,12 @@
     "#xsConf{position:fixed;inset:0;pointer-events:none;z-index:999}";
   RT.scratchCard = function (host, o) { // o: {no, amt, locked, note, closeText, onFirst, onReveal, onClose}
     if (!document.getElementById("xsCss")) { const st = document.createElement("style"); st.id = "xsCss"; st.textContent = XS_CSS; document.head.appendChild(st); }
-    const esc = RT.esc, amt = +o.amt || 0, win = amt > 0, P = RT.peso(amt);
+    const esc = RT.esc, win = RT.prizeWin(o.amt), P = RT.prizeText(o.amt), item = typeof o.amt === "string" && win;
+    const ic = item ? " it" + (P.length > 22 ? " it3" : P.length > 11 ? " it2" : "") : "";
     host.innerHTML = '<div class="xs"><div class="xs-b">MYSTERY CARD #' + esc(o.no) + "</div>" +
       '<h2 class="xs-h">' + (o.locked ? "🔒 Naka-Lock Na Ang Card Mo!" : "✨ Kaskasin Mo Na!") + "</h2>" +
       '<p class="xs-s">' + (o.locked ? "Isang beses lang pwedeng kaskasin ang card mo." : "Kapag sinimulan nang kaskasin, naka-lock na ito!") + "</p>" +
-      '<div class="xs-w"><div class="xs-p"><div class="xs-a' + (win ? "" : " bk") + '">' + (win ? esc(P) : "BOKYA 😢") + '</div><div class="xs-l">' +
+      '<div class="xs-w"><div class="xs-p"><div class="xs-a' + (win ? ic : " bk") + '">' + (win ? esc(P) : "BOKYA 😢") + '</div><div class="xs-l">' +
       (win ? (o.locked ? "VERIFIED PRIZE MO!" : "CONGRATULATIONS! PANALO KA!") : (o.locked ? "Salamat sa pagsali!" : "Better luck next time!")) + "</div></div>" +
       (o.locked ? "" : '<canvas width="270" height="165" aria-label="Kaskasin dito gamit ang daliri"></canvas>') + "</div>" +
       '<div class="xs-st' + (o.locked ? " lock" : "") + '">' + (o.locked ? (win ? "Verified Premyo Mo: " + esc(P) : "Salamat sa pagsali!") : "Gamitin ang daliri para kaskasin ang silver box 👆") + "</div>" +
