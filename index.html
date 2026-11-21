@@ -83,6 +83,9 @@ h2{font:700 15px/1.2 Arial,sans-serif;color:var(--gold2);letter-spacing:.06em;ma
 .foot{padding:18px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
 .msg{padding:48px 22px;text-align:center}
 .msg p{font-size:18px}
+/* R5:SCRATCH Mystery Scratch & Win: her orange card on the passbook, green once scratched */
+.xsb{display:flex;gap:12px;align-items:center;width:100%;min-height:68px;border:0;border-radius:12px;padding:12px 16px;background:linear-gradient(135deg,#ffa502,#ff6348);color:#fff;font:inherit;font-size:17px;text-align:left;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.xsb.done{background:linear-gradient(135deg,#2ed573,#1e90ff)}.xsb .xsi{font-size:30px;flex:none}.xsb .xst{flex:1}.xsb b{display:block;font-weight:900;font-size:18px}.xsb small{display:block;font-size:15px}
 /* sheet */
 .sheet{position:fixed;inset:0;background:rgba(7,27,63,.55);display:flex;justify-content:center;align-items:flex-end;z-index:9}
 .sheet[hidden]{display:none}
@@ -153,7 +156,8 @@ async function boot() {
   if (!box) return fail("Hindi makita ang passbook.", "Maaaring luma na ang link. Humingi ng bagong link sa RT LENDING CORP.");
   let P;
   try { P = await RT.open(await RT.aesKey(link), box); } catch (_) { return fail("Hindi mabuksan ang passbook.", "Humingi ng bagong link sa RT LENDING CORP."); }
-  S = { link, pid, D, P, mem: RT.get("rt:" + pid, { sig: {}, ask: {}, queue: [] }) };
+  S = { link, pid, D, P, mem: RT.get("rt:" + pid, { sig: {}, ask: {}, queue: [], scr: {} }) };
+  S.mem.scr = S.mem.scr || {};
   render();
   flush();
 }
@@ -206,6 +210,9 @@ function render() {
     '<div class="asof">Hanggang ' + E(RT.dLabel(P.asof)) + "</div>" +
     (A.status && A.status !== "ACTIVE" ? '<div class="asof" style="margin-left:8px">' + E(A.status) + "</div>" : "") + "</div>";
   if (todo.length) h += '<div class="band" style="padding-bottom:0"><button class="alert" data-go="sign"><span>May ' + todo.length + " pipirmahan</span>›</button></div>";
+  const xs = scr();
+  if (xs) h += '<div class="band" style="padding-bottom:0"><button class="xsb' + (xs.locked ? " done" : "") + '" data-xs="1"><span class="xsi">' + (xs.locked ? "🏆" : "🎁") + '</span><span class="xst"><b>Mystery Scratch &amp; Win!</b><small>MYSTERY CARD #' + E(xs.c.no) + " · " +
+    (xs.locked ? (xs.c.amt > 0 ? "Premyo mo: " + P$(xs.c.amt) : "Salamat sa pagsali!") : "Kaskasin mo na!") + "</small></span>›</button></div>";
 
   if (A.type === "B") {
     const p = A.period;
@@ -252,6 +259,44 @@ function render() {
   h += '<div class="foot">' + (A.type === "B" && P.co.pay ? "Pambayad: " + E(P.co.pay) + "<br>" : "") +
     "Para sa iyo lang ang passbook na ito. Huwag ibahagi ang link.<br>Na-update: " + E(RT.stamp(P.updated)) + "<br>Prepared by: " + E(P.co.name) + "</div>";
   shell(h);
+}
+
+/* ---------- Mystery Scratch & Win (R5) ---------- */
+function plusDays(ymd, n) { const [y, m, d] = ymd.split("-").map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return t.getUTCFullYear() + "-" + String(t.getUTCMonth() + 1).padStart(2, "0") + "-" + String(t.getUTCDate()).padStart(2, "0"); }
+function scr() { // this passbook's card, with what this phone already did; shown from the start date to the end date, and a month more once scratched
+  const c = S.P.scratch; if (!c || !c.id || !c.from || !c.to) return null;
+  const today = RT.ymd(Date.now()), mine = S.mem.scr[c.id], locked = !!(c.done || mine);
+  if (today < c.from) return null;
+  if (!locked && today > c.to) return null;
+  if (locked && today > plusDays(c.to, 31)) return null;
+  return { c, mine, locked };
+}
+function scrNote(c) {
+  const m = S.mem.scr[c.id];
+  if (c.done) return "Naitala na ng RT LENDING CORP. · " + E(RT.stamp(c.done.at));
+  if (m && m.sent) return "Naipadala na sa RT LENDING CORP. ang resulta mo.";
+  if (m) return "Ipapadala ito sa RT LENDING CORP. pagbukas mo ulit ng passbook.";
+  return "";
+}
+async function postScratch(c, at) {
+  const me = S.P.viewer.name, msg = RT.scratchLabel(c.no, c.amt);
+  const data = { v: 1, k: "SCRATCH", item: c.id, pid: S.pid, name: me, at, hash: "", msg };
+  data.proof = await RT.proof(S.link, ["SCRATCH", c.id, S.pid, me, at, "", msg]);
+  try { await RT.send(S.D.form && S.D.form.sign, me, msg, data); return true; }
+  catch (_) { S.mem.queue.push({ kind: "SCRATCH", label: msg, data }); return false; }
+}
+function openScratch() {
+  const xs = scr(); if (!xs) return;
+  const c = xs.c;
+  pane.innerHTML = '<div id="xsh"></div>'; sheet.hidden = false; pane.scrollTop = 0;
+  const card = RT.scratchCard($("#xsh"), { no: c.no, amt: c.amt, locked: xs.locked, note: scrNote(c),
+    onClose: () => { sheet.hidden = true; render(); },
+    onFirst: async () => {
+      S.mem.scr[c.id] = { at: Date.now(), sent: false }; RT.put("rt:" + S.pid, S.mem);
+      S.mem.scr[c.id].sent = await postScratch(c, S.mem.scr[c.id].at); RT.put("rt:" + S.pid, S.mem);
+      if (card.revealed) card.note(scrNote(c));
+    },
+    onReveal: () => card.note(scrNote(c)) });
 }
 
 /* ---------- one item ---------- */
@@ -326,8 +371,12 @@ async function flush() {
   if (!S.mem.queue.length) return;
   const left = [];
   for (const q of S.mem.queue) {
-    const form = S.D.form && (q.kind === "SIGN" ? S.D.form.sign : S.D.form.concern);
-    try { await RT.send(form, q.data.name, q.label, q.data); if (q.kind === "SIGN" && S.mem.sig[q.data.item]) S.mem.sig[q.data.item].sent = true; } catch (_) { left.push(q); }
+    const form = S.D.form && (q.kind === "CONCERN" ? S.D.form.concern : S.D.form.sign);
+    try {
+      await RT.send(form, q.data.name, q.label, q.data);
+      if (q.kind === "SIGN" && S.mem.sig[q.data.item]) S.mem.sig[q.data.item].sent = true;
+      if (q.kind === "SCRATCH" && S.mem.scr[q.data.item]) S.mem.scr[q.data.item].sent = true;
+    } catch (_) { left.push(q); }
   }
   S.mem.queue = left; RT.put("rt:" + S.pid, S.mem);
 }
@@ -440,13 +489,14 @@ function appLines(a) {
 }
 
 document.addEventListener("click", (e) => {
-  const t = e.target.closest("[data-item],[data-close],[data-go]");
-  if (!t) { if (e.target === sheet) sheet.hidden = true; return; }
-  if (t.dataset.item) openItem(t.dataset.item);
+  const t = e.target.closest("[data-item],[data-close],[data-go],[data-xs]");
+  if (!t) { if (e.target === sheet) { sheet.hidden = true; if (pane.querySelector(".xs")) render(); } return; }
+  if (t.dataset.xs) openScratch();
+  else if (t.dataset.item) openItem(t.dataset.item);
   else if (t.hasAttribute("data-close")) sheet.hidden = true;
   else if (t.dataset.go) document.getElementById(t.dataset.go).scrollIntoView({ behavior: "smooth" });
 });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") sheet.hidden = true; });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { sheet.hidden = true; if (pane.querySelector(".xs")) render(); } });
 window.addEventListener("hashchange", () => location.reload());
 boot();
 }
