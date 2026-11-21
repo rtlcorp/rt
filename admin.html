@@ -78,6 +78,11 @@ section.k>h2::before,section.k>details>summary.big::before{content:"";display:in
 .k-links{--k:#B8873F}.k-excel{--k:#1E7B34}.k-slip{--k:#0F766E}.k-forms{--k:#673AB7}.k-gh{--k:#24292F}
 .k-sulat{--k:#9D174D}
 .k-app{--k:#1F5FAE}
+.k-scr{--k:#D35400}
+.xsr{display:flex;align-items:center;gap:8px;margin:6px 0}.xsr input{width:104px;min-height:48px;font:18px Arial,sans-serif;padding:6px 10px;border:2px solid var(--line);border-radius:8px}.xsr .btn{width:auto;min-height:44px;margin:0;padding:0 14px}
+.xsw{display:flex;align-items:center;gap:10px;font-weight:400;margin:6px 0;min-height:40px}.xsw input{width:24px;height:24px;flex:none}.xsw small{color:var(--muted)}
+.xsc{display:inline-block;border-radius:999px;padding:3px 12px;font-size:14px;font-weight:700;background:#EEF0F4;color:#5B6475;margin-top:6px}.xsc.ok{background:#E3F4E6;color:#1E7B34}
+.xso{position:fixed;inset:0;background:rgba(15,20,26,.88);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;z-index:50}.xsp{background:#fff;border-radius:24px;padding:20px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
 .lr{border:1px solid var(--line);border-left:6px solid var(--k);border-radius:10px;padding:12px 14px;margin:10px 0;background:#fff}
 .lr .nm{font-weight:700}.lr .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.lr .row .btn{flex:1 1 140px;margin:0}
 .lr textarea{min-height:200px}.apk{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px;margin:8px 0}.apk b{font-weight:700;color:var(--muted)}
@@ -108,6 +113,7 @@ const GH_NEW = "https://github.com/settings/personal-access-tokens/new?name=RT+A
 const SITE_FILES = ["admin.html", "index.html", "core.js", "xlsx.mini.min.js", "manifest.json", "icon.png", "robots.txt", "README.md"];
 let GH = null; // { token, at }: only on this phone, locked with the admin password
 let D = null, MASTER = null, AKEY = null, ST = null, LINKS = {}, MSG = "";
+let HERE = null; // R5:HERE a result shown right under what was tapped
 
 const TPL = {
   B: "Ako si «PANGALAN» («ID»), borrower ng «CO».\n" +
@@ -202,6 +208,7 @@ function lockView() {
     GH = null;
     const gk = RT.get("rt:admin:gh", null);
     if (gk && gk.salt === salt) { try { GH = await RT.open(AKEY, gk.box); } catch (_) {} }
+    await ghSync(salt);
     await refreshLinks(); main();
   };
   $("#unlock").onclick = go; $("#pw").onkeydown = (e) => { if (e.key === "Enter" && !first) go(); };
@@ -221,7 +228,7 @@ async function refreshLinks() {
   LINKS = {};
   for (const akey of Object.keys(ST.accounts)) for (const v of viewersOf(akey)) {
     if (!v.ok) continue;
-    LINKS[v.key] = { link: v.link, pid: await RT.pidOf(v.link), name: v.name, akey, role: v.role };
+    LINKS[v.key] = { link: v.link, pid: await RT.pidOf(v.link), name: v.name, akey, role: v.role, holder: v.holder ? 1 : 0 };
   }
 }
 
@@ -450,13 +457,14 @@ function csv(text) {
 }
 async function applyResponses(text) {
   const byPid = {}; Object.values(LINKS).forEach((l) => { byPid[l.pid] = l; });
-  let sig = 0, ask = 0, bad = 0, old = 0, app = 0;
+  let sig = 0, ask = 0, bad = 0, old = 0, app = 0, scr = 0, rows = 0;
   ST.apps = ST.apps || {};
   for (const row of csv(text)) {
     const ac = row.find((c) => c.trim().startsWith("{") && c.includes('"t":"APP"'));
     if (ac) {
       let d; try { d = JSON.parse(ac); } catch (_) { continue; }
       if (!d || !d.id || !d.a || typeof d.a !== "object") continue;
+      rows++;
       if (ST.apps[d.id]) { old++; continue; }
       const a = {}; Object.entries(d.a).forEach(([k, v]) => { a[k] = typeof v === "number" ? v : String(v == null ? "" : v).slice(0, 600); });
       ST.apps[d.id] = { id: String(d.id).slice(0, 40), at: +d.at || Date.now(), a, sig: String(d.sig || "").slice(0, 60000), got: Date.now(), status: "BAGO" }; app++;
@@ -465,8 +473,18 @@ async function applyResponses(text) {
     const cell = row.find((c) => c.trim().startsWith("{") && c.includes('"item"'));
     if (!cell) continue;
     let d; try { d = JSON.parse(cell); } catch (_) { continue; }
+    if (!d || typeof d !== "object") continue;
+    rows++;
     const key = [d.k, d.item, d.pid, d.at].join("|");
     if (ST.seen[key]) { old++; continue; }
+    if (d.k === "SCRATCH") {
+      const sw = byPid[d.pid], X = ST.scratch, card = sw && X && X.cards ? X.cards[sw.akey] : null;
+      const okx = sw && sw.holder && (await RT.proof(sw.link, [d.k, d.item, d.pid, d.name, d.at, d.hash, d.msg])) === d.proof;
+      ST.seen[key] = 1;
+      if (!okx || !card || d.item !== "X|" + X.id || d.msg !== RT.scratchLabel(card.no, card.amt)) { bad++; continue; }
+      if (!card.done) { card.done = { at: d.at, by: sw.name }; scr++; } else old++;
+      continue;
+    }
     const who = byPid[d.pid], it = ST.items[d.item];
     const okp = who && (await RT.proof(who.link, [d.k, d.item, d.pid, d.name, d.at, d.hash, d.k === "SIGN" ? d.svg : d.msg])) === d.proof;
     if (!okp || !it || it.acct !== who.akey) { bad++; ST.seen[key] = 1; continue; }
@@ -474,7 +492,7 @@ async function applyResponses(text) {
     if (d.k === "SIGN") { if (!it.sigs[who.name]) { it.sigs[who.name] = { at: d.at, path: d.svg, hash: d.hash, same: d.hash === (await RT.itemHash(it)) }; sig++; } }
     else if (d.k === "CONCERN") { it.concerns.push({ at: d.at, by: who.name, msg: d.msg, resolved: false }); ask++; }
   }
-  return { sig, ask, bad, old, app };
+  return { sig, ask, bad, old, app, scr, rows };
 }
 
 /* ---------- data.json ---------- */
@@ -486,7 +504,9 @@ async function build() {
     const items = Object.values(ST.items).filter((it) => it.acct === A.key && !it.void).map((it) => ({ id: it.id, kind: it.kind, title: it.title, lines: it.lines, holder: it.holder,
       signers: it.signers, roles: it.roles, any: it.any, sent: it.sent, restart: it.restart, sigs: Object.fromEntries(Object.entries(it.sigs || {}).map(([n, s]) => [n, { at: s.at, path: s.path }])),
       concerns: (it.concerns || []).map((c) => ({ at: c.at, by: c.by, msg: c.msg, resolved: c.resolved, reply: c.reply, replyAt: c.replyAt })) }));
-    people[l.pid] = await RT.seal(await RT.aesKey(l.link), { v: 1, viewer: { name: l.name, role: l.role }, acct: A, items, co: ST.co, asof: ST.asof, period: ST.period, days: ST.days, updated: now });
+    const X = ST.scratch, xc = X && X.id && X.cards && l.holder ? X.cards[A.key] : null;
+    const scratch = xc ? { id: "X|" + X.id, no: xc.no, amt: xc.amt, from: X.from, to: X.to, done: xc.done ? { at: xc.done.at } : null } : undefined;
+    people[l.pid] = await RT.seal(await RT.aesKey(l.link), { v: 1, viewer: { name: l.name, role: l.role }, acct: A, items, co: ST.co, asof: ST.asof, period: ST.period, days: ST.days, updated: now, scratch });
   }
   const out = { v: 1, updated: now, salt: ST.salt, verifier: ST.verifier, days: ST.days, form: ST.form,
     apply: { co: (ST.co && ST.co.name) || "RT LENDING CORP.", tagline: (ST.co && ST.co.tagline) || "", rate: ST.rate || 0.025 }, admin: await RT.seal(AKEY, Object.assign({}, ST, { dirty: 0 })), people };
@@ -500,8 +520,16 @@ function counts(akey) {
   return c;
 }
 /* ---------- GitHub: one-tap save (the key never leaves this phone) ---------- */
-async function ghKeep(token) { GH = { token, at: Date.now() }; RT.put("rt:admin:gh", { salt: ST.salt, box: await RT.seal(AKEY, GH) }); }
-function ghForget() { GH = null; try { localStorage.removeItem("rt:admin:gh"); } catch (_) {} }
+async function ghKeep(token) { GH = { token, at: Date.now() }; ST.gh = GH; RT.put("rt:admin:gh", { salt: ST.salt, box: await RT.seal(AKEY, GH) }); await draft(); }
+async function ghForget() { GH = null; delete ST.gh; try { localStorage.removeItem("rt:admin:gh"); } catch (_) {} await draft(); }
+async function ghSync(salt) { // R5: the newest key wins; a cleared or new phone gets it back from the locked data, and a phone key moves into it
+  const g1 = GH && GH.token ? GH : null, g2 = ST.gh && ST.gh.token ? ST.gh : null;
+  if (!g1 && !g2) return;
+  const g = !g1 ? g2 : !g2 ? g1 : (g2.at > g1.at ? g2 : g1);
+  GH = g;
+  if (!g1 || g1.token !== g.token) RT.put("rt:admin:gh", { salt, box: await RT.seal(AKEY, g) });
+  if (!g2 || g2.token !== g.token) { ST.gh = g; await draft(); }
+}
 function b64bytes(u8) { let x = ""; for (let i = 0; i < u8.length; i += 0x8000) x += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(x); }
 function ghHead(json) { const h = { Accept: "application/vnd.github.object+json" }; if (GH && GH.token) h.Authorization = "Bearer " + GH.token; if (json) h["Content-Type"] = "application/json"; return h; }
 function ghWhy(r) {
@@ -532,7 +560,7 @@ function ghHTML() {
   if (old) h += '<p class="wait">Malapit nang mag-expire ang GitHub key (ginawa noong ' + E(RT.stamp(GH.at)) + '). Gumawa ng bago sa ibaba.</p>';
   h += '<button class="btn ' + (GH ? "lite" : "gold") + ' full" id="dl">I-DOWNLOAD ANG data.json</button>' + (REPO && !GH ? '<a class="btn sec full" href="' + E(REPO) + '" target="_blank" rel="noopener">BUKSAN ANG UPLOAD SA GITHUB</a>' : "") + '<p id="dlm" class="muted"></p><p id="ghz" class="muted"></p>';
   h += '<details' + (GH && !old ? "" : " open") + '><summary>' + (GH ? "GitHub key (naka-set)" : "Isang beses lang: GitHub key") + "</summary>";
-  if (GH) h += '<p class="muted">Naka-set noong ' + E(RT.stamp(GH.at)) + '. Sa phone na ito lang nakatago ang key, naka-lock sa password mo.</p>';
+  if (GH) h += '<p class="muted">Naka-set noong ' + E(RT.stamp(GH.at)) + '. Naka-lock ang key sa password mo, sa phone na ito at sa data.json. Sa bagong phone, babalik ito pagkatapos ng LIHIM NA PASSWORD.</p>';
   h += '<ol class="muted" style="padding-left:20px;margin:8px 0"><li>I-tap ang <b>GUMAWA NG GITHUB KEY</b>. Bubukas ang GitHub (naka-sign in dapat).</li><li>Sa <b>Resource owner</b>, i-tap at piliin ulit ang <b>' + E(GH_OWNER) + '</b>.</li><li>Sa <b>Repository access</b>, piliin ang <b>All repositories</b>.</li>' +
     '<li>Mag-scroll pababa ▸ <b>Generate token</b> (i-tap ulit kapag nagtanong).</li><li>I-copy ang key (nagsisimula sa <b>github_pat_</b>).</li><li>Bumalik dito, i-paste sa ibaba ▸ <b>I-SAVE ANG KEY</b>.</li></ol>' +
     '<a class="btn sec full" href="' + E(GH_NEW) + '" target="_blank" rel="noopener">GUMAWA NG GITHUB KEY</a>' +
@@ -558,10 +586,10 @@ function ghBind() {
     try {
       const r = await fetch("https://api.github.com/repos/" + GH_REPO + "/contents/data.json?ref=main&t=" + Date.now(), { headers: ghHead(), cache: "no-store" });
       if (!r.ok && r.status !== 404) throw r;
-      await ghKeep(t); MSG = "Naka-save ang GitHub key. Isang tap na lang ang I-SAVE SA GITHUB."; main();
+      await ghKeep(t); here("#ghm", '<span class="ok">Naka-save ang GitHub key.</span> Isang tap na lang ang I-SAVE SA GITHUB.'); main();
     } catch (e) { GH = prev; $("#ghkm").textContent = ghWhy(e); }
   };
-  if ($("#ghx")) $("#ghx").onclick = () => { ghForget(); MSG = "Tinanggal ang GitHub key sa phone na ito."; main(); };
+  if ($("#ghx")) $("#ghx").onclick = async () => { await ghForget(); here("#dlm", '<span class="ok">Tinanggal ang GitHub key.</span>'); main(); };
   if ($("#ghs")) $("#ghs").onclick = async () => {
     if (!Object.keys(ST.accounts).length) { $("#ghm").textContent = "Basahin muna ang Excel."; return; }
     const b = $("#ghs"); b.disabled = true; $("#ghm").textContent = "Sine-save sa GitHub…";
@@ -580,11 +608,21 @@ function ghBind() {
     const b = $("#ghu"); b.disabled = true; const done = [];
     try {
       for (const f of fs) { $("#ghum").textContent = "Ina-upload ang " + siteName(f.name) + "…"; await ghPut(siteName(f.name), b64bytes(new Uint8Array(await f.arrayBuffer())), "Update " + siteName(f.name)); done.push(siteName(f.name)); }
-      $("#ghum").innerHTML = '<span class="ok">Na-upload: ' + E(done.join(", ")) + ".</span> Pagkalipas ng 1–2 minuto, gamit na ang bago.";
+      $("#ghum").innerHTML = '<span class="ok">Na-upload: ' + E(done.join(", ")) + ".</span> Pagkalipas ng 10 minuto, isara at buksan ulit ang RT Admin para magamit ang bago.";
     } catch (e) { $("#ghum").innerHTML = (done.length ? "Na-upload: " + E(done.join(", ")) + ". " : "") + '<span class="bad">' + E(ghWhy(e)) + "</span>"; }
     b.disabled = false;
   };
 }
+/* R5: every result shows right where she tapped, and the page stays on that section */
+function here(sel, html) { HERE = { sel, html }; }
+function hereShow() {
+  if (!HERE) return; const h = HERE; HERE = null;
+  const el = document.querySelector(h.sel); if (!el) return;
+  el.innerHTML = h.html;
+  for (let d = el.closest("details"); d; d = d.parentElement ? d.parentElement.closest("details") : null) d.open = true;
+  el.scrollIntoView({ block: "center" });
+}
+function saveHint() { return GH ? "Pindutin ang I-SAVE SA GITHUB." : "I-download ang data.json at i-upload sa GitHub."; }
 function main() {
   withForms(ST);
   ST.letters = Object.assign({ tpl: {}, log: [], edit: {}, type: "REM" }, ST.letters || {}); ST.apps = ST.apps || {};
@@ -602,7 +640,8 @@ function main() {
     (linkTo("SIGNATURES") ? '<a class="btn lite" href="' + E(linkTo("SIGNATURES")) + '" target="_blank" rel="noopener">BUKSAN ANG SIGNATURES</a>' : "") +
     (linkTo("CONCERNS") ? '<a class="btn lite" href="' + E(linkTo("CONCERNS")) + '" target="_blank" rel="noopener">BUKSAN ANG CONCERNS</a>' : "") + '<input type="file" id="rs" accept=".csv,.zip,text/csv,application/zip,application/x-zip-compressed" multiple><p id="rsm" class="muted"></p></section>';
   h += appsHTML();
-  h += '<section><h2>May tanong o tutol (' + open.length + ")</h2>" + (open.length ? open.map((o) =>
+  h += xsHTML();
+  h += '<section><h2>May tanong o tutol (' + open.length + ')</h2><p id="cnm" class="muted"></p>' + (open.length ? open.map((o) =>
     '<div class="alertc"><b>' + E(o.c.by) + "</b> · " + E(RT.stamp(o.c.at)) + "<br>" + E(o.it.title) + "<p>" + E(o.c.msg) + '</p><label>Sagot mo (makikita niya)</label><textarea data-reply="' + E(o.it.id) + "|" + o.i + '"></textarea>' +
     '<button class="btn pri" data-solve="' + E(o.it.id) + "|" + o.i + '">NAAYOS NA</button><p class="muted">Pagka-ayos, magsisimula ulit ang ' + ST.days + " araw kung wala pang pirma.</p></div>").join("") : '<p class="muted">Walang bukas na tanong o tutol.</p>') + "</section>";
   h += '<section><h2>Mga passbook at link</h2>' + (accts.length ? accts.filter(listed).sort((a, b) => a.type.localeCompare(b.type) || (a.id || a.name).localeCompare(b.id || b.name)).map((A) => {
@@ -615,7 +654,7 @@ function main() {
     '<details><summary>Bagong PASSBOOK KEY (kapag naipasa sa iba ang link)</summary><p class="muted">Kopyahin at ilagay sa PASSBOOK KEY ng tao sa Excel. Pagka-upload ng bagong data.json, hindi na bubukas ang luma.</p><p><b id="nk"></b></p><button class="btn sec" id="mk">GUMAWA NG BAGONG KEY</button><button class="btn lite" id="ck">KOPYAHIN</button></details></section>';
   h += '<section><h2>Mga pipirmahan</h2><select id="ia"><option value="">Hinihintay o may tutol</option><option value="*">Lahat (pinakabago)</option>' + accts.filter(listed).map((A) => '<option value="' + E(A.key) + '">' + E(A.name) + "</option>").join("") + '</select><div id="il"></div>' +
     '<details><summary>Bagong pipirmahan (sariling sulat)</summary><label for="ca">Para kay</label><select id="ca">' + accts.filter(listed).map((A) => '<option value="' + E(A.key) + '">' + E(A.name) + "</option>").join("") +
-    '</select><label for="ct">Pamagat</label><input type="text" id="ct" placeholder="hal. PAGKILALA SA BALANSE"><label for="cl">Laman (isang talata bawat linya)</label><textarea id="cl"></textarea><button class="btn sec" id="cadd">IDAGDAG</button></details></section>';
+    '</select><label for="ct">Pamagat</label><input type="text" id="ct" placeholder="hal. PAGKILALA SA BALANSE"><label for="cl">Laman (isang talata bawat linya)</label><textarea id="cl"></textarea><button class="btn sec" id="cadd">IDAGDAG</button><p id="cam" class="muted"></p></details></section>';
   h += '<section><details><summary>Kasunduan, patakaran at Google Form</summary>' +
     '<label for="dy">Ilang araw bago ituring na TINANGGAP</label><input type="number" id="dy" min="1" max="60" value="' + ST.days + '">' +
     '<label>Kusang gagawin na pipirmahan</label>' + Object.entries(AUTO).map(([k, t]) => '<label style="font-weight:400"><input type="checkbox" data-auto="' + k + '"' + (ST.auto[k] ? " checked" : "") + "> " + E(t) + "</label>").join("") +
@@ -623,7 +662,7 @@ function main() {
     '<p class="muted">Ang «MGA SALITANG ITO» ay kusang napapalitan ng datos. Para lang sa mga bagong pipirmahan ang pagbabago.</p>' +
     '<label for="fs">RT LENDING CORP. - Passbook Signatures (pre-filled link na may 1, 2, 3)</label><input type="text" id="fs" value="' + E(ST.form.signRaw || "") + '">' +
     '<label for="fc">RT LENDING CORP. - Passbook Concerns (pre-filled link na may 1, 2, 3)</label><input type="text" id="fc" value="' + E(ST.form.concernRaw || "") + '">' +
-    '<p class="muted" id="fm">' + (ST.form.sign && ST.form.concern ? "Nakakabit na ang dalawang form." : "Hindi pa nakakabit ang Passbook Signatures at Passbook Concerns: hindi pa makakapagpadala ng pirma at tutol.") + '</p><button class="btn sec" id="save2">I-SAVE ANG MGA ITO</button></details></section>';
+    '<p class="muted" id="fm">' + (ST.form.sign && ST.form.concern ? "Nakakabit na ang dalawang form." : "Hindi pa nakakabit ang Passbook Signatures at Passbook Concerns: hindi pa makakapagpadala ng pirma at tutol.") + '</p><button class="btn sec" id="save2">I-SAVE ANG MGA ITO</button><p id="fsm" class="muted"></p></details></section>';
   h += ghHTML();
   app.innerHTML = h; MSG = "";
   items();
@@ -634,9 +673,11 @@ function main() {
   kulayBind();
   lettersBind();
   appsBind();
+  xsBind();
+  hereShow();
 }
 const KULAY = [["k-links", "s-links", "Mga link at logo"], ["k-excel", "s-excel", "1 · Excel"], ["k-slip", "s-slip", "Mga slip"],
-  ["k-sulat", "s-sulat", "Mga sulat"], ["k-forms", "s-forms", "2 · Mga sagot mula sa Google Form"], ["k-app", "s-app", "Mga loan application"], ["k-gh", "s-gh", "3 · I-save sa GitHub"]];
+  ["k-sulat", "s-sulat", "Mga sulat"], ["k-forms", "s-forms", "2 · Mga sagot mula sa Google Form"], ["k-app", "s-app", "Mga loan application"], ["k-scr", "s-scr", "Mystery Scratch & Win"], ["k-gh", "s-gh", "3 · I-save sa GitHub"]];
 function kulayBind() {
   document.querySelectorAll(".kc[data-go]").forEach((b) => { b.onclick = () => {
     const s = document.getElementById(b.dataset.go); if (!s) return;
@@ -711,7 +752,7 @@ function linksHTML() {
     '<button class="btn sec full" data-logo="hdr">I-DOWNLOAD: LOGO PARA SA GOOGLE FORMS (1600 × 400)</button><p id="lgm" class="muted"></p>' +
     '<details><summary>I-edit ang mga link</summary><p class="muted">Isang link bawat linya: <b>PANGALAN | https://…</b> · Ang linyang nagsisimula sa # ay pangalan ng grupo.</p>' +
     '<textarea id="lkt" rows="14" spellcheck="false">' + E(ST.links && ST.links.trim() ? ST.links : LINKS_DEFAULT) + '</textarea>' +
-    '<button class="btn sec" id="lks">I-SAVE ANG MGA LINK</button><button class="btn lite" id="lkr">IBALIK SA DATI</button></details>';
+    '<button class="btn sec" id="lks">I-SAVE ANG MGA LINK</button><button class="btn lite" id="lkr">IBALIK SA DATI</button><p id="lkm" class="muted"></p></details>';
 }
 function linksBind() {
   document.querySelectorAll("[data-logo]").forEach((b) => { b.onclick = async () => {
@@ -726,8 +767,8 @@ function linksBind() {
     saveFiles([new File([blob], LOGO_FILES[k], { type: blob.type })]);
     $("#lgm").textContent = "Na-download ang " + LOGO_FILES[k] + ". Nasa Downloads ito.";
   }; });
-  $("#lks").onclick = async () => { ST.links = $("#lkt").value.trim(); await draft(); MSG = "Na-save ang mga link. Huwag kalimutang i-download at i-upload ang data.json."; main(); };
-  $("#lkr").onclick = async () => { ST.links = ""; await draft(); MSG = "Ibinalik sa dati ang mga link. Huwag kalimutang i-download at i-upload ang data.json."; main(); };
+  $("#lks").onclick = async () => { ST.links = $("#lkt").value.trim(); await draft(); here("#lkm", '<span class="ok">Na-save ang mga link.</span> ' + E(saveHint())); main(); };
+  $("#lkr").onclick = async () => { ST.links = ""; await draft(); here("#lkm", '<span class="ok">Ibinalik sa dati ang mga link.</span> ' + E(saveHint())); main(); };
 }
 const FORM_SIGN = "https://docs.google.com/forms/d/e/1FAIpQLSf6vmZQj8F9-IdfjCE-uLfeTuL5CgfSqrDisJWJD2zjWk8_Bw/viewform?usp=pp_url&entry.321061828=1&entry.744736386=2&entry.133644214=3";
 const FORM_CONCERN = "https://docs.google.com/forms/d/e/1FAIpQLSdEfnvpc0lnmj72TF3b8iwEnzf97a-aeBLypQIZvT_1xIVBzg/viewform?usp=pp_url&entry.321061828=1&entry.744736386=2&entry.133644214=3";
@@ -1609,8 +1650,7 @@ async function letterJpeg(k, t) {
   const wrap = (t2, font, w) => { x.font = font; const out = []; let l = ""; String(t2).split(" ").forEach((wd) => { const tt = l ? l + " " + wd : wd; if (x.measureText(tt).width > w && l) { out.push(l); l = wd; } else l = tt; }); if (l) out.push(l); return out; };
   const logo = await logoImg(), lh = 150, lw = lh * logo.width / logo.height;
   x.drawImage(logo, PD, 54, lw, lh);
-  x.fillStyle = "#0B2550"; x.font = "bold 50px Georgia"; x.fillText(co, PD + lw + 34, 124);
-  x.fillStyle = "#8C6424"; x.font = "italic 25px Georgia"; x.fillText((ST.co && ST.co.tagline) || "", PD + lw + 36, 166);
+  x.fillStyle = "#8C6424"; x.font = "italic 30px Georgia"; x.fillText((ST.co && ST.co.tagline) || "", PD + lw + 36, 140); // R5: the logo carries the name
   x.fillStyle = "#B8873F"; x.fillRect(PD, 236, W - 2 * PD, 4); x.fillRect(PD, 246, W - 2 * PD, 1.5);
   let y = 312;
   x.fillStyle = "#1B2333"; x.font = "28px Arial"; x.textAlign = "right"; x.fillText(longDate(RT.ymd(Date.now())), W - PD, y); x.textAlign = "left";
@@ -1681,7 +1721,7 @@ function lettersHTML() {
     '<details><summary>Mga template ng sulat</summary><p class="muted">Ang «MGA SALITANG ITO» ay kusang napapalitan ng datos. Isang talata bawat linya.</p>' +
     Object.entries(LTR).filter(([kk, v]) => v.body).map(([kk]) => { const T = ltrTpl(kk); return '<label for="lti' + kk + '">' + E(LTR[kk].name) + ' · pamagat</label><input type="text" id="lti' + kk + '" value="' + E(T.title) + '">' +
       '<label for="ltb' + kk + '">' + E(LTR[kk].name) + ' · laman</label><textarea id="ltb' + kk + '" rows="8">' + E(T.body) + "</textarea>"; }).join("") +
-    '<button class="btn sec" id="ltsave">I-SAVE ANG MGA TEMPLATE</button><button class="btn lite" id="ltreset">IBALIK ANG MGA TEMPLATE SA DATI</button></details></section>';
+    '<button class="btn sec" id="ltsave">I-SAVE ANG MGA TEMPLATE</button><button class="btn lite" id="ltreset">IBALIK ANG MGA TEMPLATE SA DATI</button><p id="ltm" class="muted"></p></details></section>';
 }
 function lettersBind() {
   const sel = $("#lt"); if (!sel) return;
@@ -1693,9 +1733,9 @@ function lettersBind() {
       const ti = $("#lti" + kk).value.trim(), bo = $("#ltb" + kk).value.trim();
       ST.letters.tpl[kk] = { title: ti || LTR[kk].title, body: bo || LTR[kk].body };
     });
-    await draft(); MSG = "Na-save ang mga template ng sulat."; main(); document.getElementById("s-sulat").scrollIntoView({ block: "start" });
+    await draft(); here("#ltm", '<span class="ok">Na-save ang mga template ng sulat.</span>'); main();
   };
-  $("#ltreset").onclick = async () => { ST.letters.tpl = {}; await draft(); MSG = "Ibinalik sa dati ang mga template ng sulat."; main(); document.getElementById("s-sulat").scrollIntoView({ block: "start" }); };
+  $("#ltreset").onclick = async () => { ST.letters.tpl = {}; await draft(); here("#ltm", '<span class="ok">Ibinalik sa dati ang mga template ng sulat.</span>'); main(); };
   const box = $("#ll");
   box.onclick = async (e) => {
     const b = e.target.closest("button[data-lt]"); if (!b || SX.busy) return;
@@ -1739,7 +1779,7 @@ function appsHTML() {
     '<a class="btn lite" href="' + E(link) + '" target="_blank" rel="noopener">BUKSAN ANG FORM DITO (HARAPAN)</a><p id="apm" class="muted"></p>' +
     (list.length ? list.map((p) => {
       const a = p.a, nm = appName(p), ok = p.status === "APRUBADO";
-      return '<div class="lr"><div class="nm">' + E(nm) + " " + chip(p) + '</div><div class="muted">' + E(a.uri) + " · " + E(P$(a.amt)) + " · " + E(RT.stamp(p.at)) + "</div>" +
+      return '<div class="lr"><div class="nm">' + E(nm) + " " + chip(p) + '</div><div class="muted">' + E(a.uri) + " · " + E(P$(a.amt)) + " · " + E(RT.stamp(p.at)) + "</div>" + '<p class="muted" data-apx="' + E(p.id) + '"></p>' +
         '<details' + (p.id === AP_OPEN ? " open" : "") + '><summary>Buksan</summary><div class="apk">' + [["Mobile", a.mob], ["Messenger", a.msgr], ["Tirahan", a.addr], ["Paaralan / Opisina", a.sch], ["Posisyon", a.pos], ["Bangko", a.bank],
           ["Net pay", P$(a.net)], ["GCash", a.gc + (a.gcn ? " (" + a.gcn + ")" : "")], ["Halaga", P$(a.amt)], ["Para sa", a.why], ["Ibang utang", a.debt]].filter((r) => r[1]).map((r) => "<b>" + E(r[0]) + "</b><span>" + E(r[1]) + "</span>").join("") + "</div>" +
         '<canvas class="sig" data-path="' + E(p.sig) + '"></canvas>' +
@@ -1772,19 +1812,134 @@ function appsBind() {
       const nm = appName(p), blob = await RT.copyJpeg({ head: "APPLICATION", co: (ST.co && ST.co.name) || "RT LENDING CORP.", tagline: (ST.co && ST.co.tagline) || "", title: "LOAN APPLICATION · " + p.a.uri, holder: nm, role: "Aplikante",
         lines: appLinesA(p.a), sigs: [{ name: nm, role: "Aplikante", at: p.at, path: p.sig }], status: { code: "SIGNED", text: p.status }, code: p.id, id: RT.stamp(p.at) });
       saveFiles([new File([blob], ("LOAN APPLICATION " + nm + " " + RT.ymd(p.at) + ".jpg").replace(/[\\/:*?"<>|]/g, ""), { type: "image/jpeg" })]);
-      say('<span class="ok">Na-save sa Downloads ang kopya ng application ni ' + E(nm) + ".</span>"); return;
+      const sl = sec.querySelector('[data-apx="' + CSS.escape(p.id) + '"]'); if (sl) sl.innerHTML = '<span class="ok">Na-save sa Downloads ang kopya ng application ni ' + E(nm) + ".</span>"; return;
     }
     if (b.dataset.ap === "yes") {
       const amt = Number($("#apa" + CSS.escape(p.id)).value) || 0, rel = $("#apr" + CSS.escape(p.id)).value;
-      if (!(amt > 0) || !rel) { say('<span class="bad">Ilagay ang halaga at petsa ng release.</span>'); return; }
-      p.status = "APRUBADO"; p.ok = { amt, rel, at: Date.now() }; AP_OPEN = p.id; await draft(); MSG = "Aprubado ang loan application ni " + appName(p) + ". Ilagay sa Excel ang mga nasa ibaba, at gumawa ng Notice of Loan Approval.";
-      main(); document.getElementById("s-app").scrollIntoView({ block: "start" }); return;
+      if (!(amt > 0) || !rel) { const sl = sec.querySelector('[data-apx="' + CSS.escape(p.id) + '"]'); if (sl) sl.innerHTML = '<span class="bad">Ilagay ang halaga at petsa ng release.</span>'; return; }
+      p.status = "APRUBADO"; p.ok = { amt, rel, at: Date.now() }; AP_OPEN = p.id; await draft();
+      here('[data-apx="' + CSS.escape(p.id) + '"]', '<span class="ok">Aprubado ang loan application ni ' + E(appName(p)) + ".</span> Ilagay sa Excel ang mga nasa ibaba, at gumawa ng Notice of Loan Approval.");
+      main(); return;
     }
-    if (b.dataset.ap === "no") { p.status = "HINDI APRUBADO"; p.no = { at: Date.now() }; await draft(); MSG = "Hindi inaprubahan ang application ni " + appName(p) + "."; main(); document.getElementById("s-app").scrollIntoView({ block: "start" }); return; }
+    if (b.dataset.ap === "no") { p.status = "HINDI APRUBADO"; p.no = { at: Date.now() }; await draft(); here('[data-apx="' + CSS.escape(p.id) + '"]', '<span class="ok">Hindi inaprubahan ang application ni ' + E(appName(p)) + ".</span>"); main(); return; }
     if (b.dataset.ap === "nla") { ST.letters.type = "NLA"; await draft(); main(); document.getElementById("s-sulat").scrollIntoView({ block: "start" }); }
   };
 }
 /* R4:END */
+
+/* R5:SCRATCH — Mystery Scratch & Win (her three files, Nov 18; built Nov 21).
+   One card per chosen account, inside its own passbook; only the holder scratches it, once.
+   RT Admin draws every card number and prize from one deck, so no card is used twice and the total never goes over the deck.
+   Before the start date the deck can be shuffled again; from the start date every card stays and only the newly ticked get one. */
+const XS_DECK = { B: [[50, 2], [20, 5], [10, 13], [5, 15], [2, 15]], A: [[50, 2], [20, 5], [10, 10], [5, 13], [0, 20]] };
+const XS_MSG = "Magandang araw! May Mystery Scratch & Win ka sa passbook mo ngayong Disyembre. Buksan ang link ng passbook mo at kaskasin ang card mo. Isang beses lang ito. Salamat!";
+function xsState() {
+  const y = RT.ymd(Date.now()).slice(0, 4);
+  const X = ST.scratch = Object.assign({ from: y + "-12-01", to: y + "-12-31", deck: XS_DECK.B.map((r) => ({ amt: r[0], n: r[1] })), who: {}, picked: 0, cards: {}, left: [], id: "", dealt: 0, msg: XS_MSG }, ST.scratch || {});
+  if (!X.picked) { X.who = {}; Object.values(ST.accounts).forEach((A) => { if (A.type === "B" && A.status === "ACTIVE") X.who[A.key] = 1; }); }
+  return X;
+}
+const xsN = (r) => Math.max(0, Math.floor(+r.n || 0)), xsA = (r) => Math.max(0, Math.round((+r.amt || 0) * 100) / 100);
+const xsCount = (X) => X.deck.reduce((n, r) => n + xsN(r), 0);
+const xsSum = (X) => X.deck.reduce((n, r) => n + xsA(r) * xsN(r), 0);
+const xsOpen = (X) => !!X.id && RT.ymd(Date.now()) >= X.from; // from the start date the cards can be scratched: they stay as they are
+const xsSumLine = (X) => xsCount(X) + " card · kabuuan " + P$(xsSum(X)) + " · ₱0 = BOKYA";
+function xsShuffle(a) { const r = new Uint32Array(a.length); crypto.getRandomValues(r); for (let i = a.length - 1; i > 0; i--) { const j = r[i] % (i + 1), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function xsDeal(X) {
+  const want = Object.keys(X.who).filter((k) => X.who[k] && ST.accounts[k] && listed(ST.accounts[k]));
+  if (!want.length) return { err: "Pumili muna kung sino ang may card." };
+  if (!xsOpen(X)) { // the first time, or before the start date: a fresh shuffle of the whole deck
+    const amts = []; X.deck.forEach((r) => { for (let i = 0; i < xsN(r); i++) amts.push(xsA(r)); });
+    if (want.length > amts.length) return { err: "Kulang ang card: " + amts.length + " card para sa " + want.length + " tao. Dagdagan ang mga premyo." };
+    xsShuffle(amts);
+    const pool = xsShuffle(amts.map((amt, i) => ({ no: i + 1, amt })));
+    X.cards = {}; xsShuffle(want.slice()).forEach((k) => { const c = pool.pop(); X.cards[k] = { no: c.no, amt: c.amt, at: Date.now() }; });
+    X.left = pool; X.id = RT.b64u(crypto.getRandomValues(new Uint8Array(9))); X.dealt = Date.now();
+    return { n: want.length };
+  }
+  let n = 0; // from the start date: every card stays; the newly ticked get one from the cards left
+  for (const k of want) {
+    if (X.cards[k]) continue;
+    if (!X.left.length) return { err: "Ubos na ang card para kay " + ST.accounts[k].name + ".", n };
+    xsShuffle(X.left); const c = X.left.pop(); X.cards[k] = { no: c.no, amt: c.amt, at: Date.now() }; n++;
+  }
+  return { n };
+}
+function xsHTML() {
+  const head = '<section class="k k-scr" id="s-scr"><h2>Mystery Scratch &amp; Win</h2>';
+  if (!Object.keys(ST.accounts).length) return head + '<p class="muted">Basahin muna ang Excel.</p></section>';
+  const X = xsState(), open = xsOpen(X);
+  const cards = Object.entries(X.cards).filter(([k]) => ST.accounts[k]).map(([k, c]) => ({ k, c, A: ST.accounts[k] }));
+  const got = cards.filter((r) => r.c.done), paid = got.filter((r) => r.c.paid), sum = (l) => l.reduce((n, r) => n + (+r.c.amt || 0), 0);
+  let h = head + '<p class="muted">Isang card bawat napili, nasa sariling passbook nila. Ang may-ari ng passbook lang ang makakakaskas, at isang beses lang. Darating dito ang resulta kapag binasa mo ang mga sagot sa <b>2 · Mga sagot mula sa Google Form</b>.</p>';
+  if (X.id) h += '<div class="xv"><p><b>Naibigay:</b> ' + cards.length + " card · kabuuang premyo " + E(P$(sum(cards))) + "</p><p><b>Nakaskas:</b> " + got.length + " · " + E(P$(sum(got))) +
+    "</p><p><b>Bayad na:</b> " + paid.length + " · " + E(P$(sum(paid))) + "</p><p><b>Natitirang card:</b> " + X.left.length + "</p></div>";
+  h += '<label for="xsf">Simula</label><input type="date" id="xsf" value="' + E(X.from) + '"><label for="xst">Hanggang</label><input type="date" id="xst" value="' + E(X.to) + '"><p id="xsdm" class="muted"></p>';
+  h += '<p class="slg">Mga premyo (halaga × ilang card)</p>' + (open ? "" : '<div class="row"><button class="btn lite" data-xp="B">LAHAT PANALO</button><button class="btn lite" data-xp="A">MAY BOKYA</button></div>') +
+    X.deck.map((r, i) => '<div class="xsr"><span>₱</span><input type="number" min="0" step="1" inputmode="numeric" data-xa="' + i + '" value="' + E(String(r.amt)) + '"' + (open ? " disabled" : "") +
+      '><span>×</span><input type="number" min="0" step="1" inputmode="numeric" data-xn="' + i + '" value="' + E(String(r.n)) + '"' + (open ? " disabled" : "") + ">" +
+      (open ? "" : '<button class="btn lite" data-xdel="' + i + '" aria-label="Alisin ang premyong ito">✕</button>') + "</div>").join("") +
+    (open ? "" : '<button class="btn lite" id="xadd">DAGDAG NA PREMYO</button>') + '<p class="muted" id="xsum">' + E(xsSumLine(X)) + "</p>";
+  const accts = Object.values(ST.accounts).filter(listed).sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name));
+  h += '<p class="slg">Sino ang may card</p>' + accts.map((A) => { const fixed = open && X.cards[A.key];
+    return '<label class="xsw"><input type="checkbox" data-xw="' + E(A.key) + '"' + (X.who[A.key] || fixed ? " checked" : "") + (fixed ? " disabled" : "") + "> <span>" + E(A.name) + " <small>" +
+      E(A.type === "B" ? A.id : A.type === "I" ? "Co-investor" : "Taga-withdraw") + "</small></span></label>"; }).join("");
+  h += '<button class="btn pri" id="xdeal">' + (open ? "IBIGAY SA MGA BAGONG NAPILI" : X.id ? "I-SHUFFLE ULIT AT IBIGAY ANG MGA CARD" : "I-SHUFFLE AT IBIGAY ANG MGA CARD") + '</button><p id="xsm" class="muted"></p>';
+  h += '<button class="btn sec" id="xtry">SUBUKAN ANG CARD</button>';
+  h += '<label for="xsmsg">Mensahe para sa Messenger</label><textarea id="xsmsg" rows="4">' + E(X.msg || XS_MSG) + '</textarea><button class="btn sec" id="xcopy">KOPYAHIN ANG MENSAHE</button><p id="xcm" class="muted"></p>';
+  if (cards.length) h += '<p class="slg">Mga card</p>' + cards.sort((a, b) => a.A.name.localeCompare(b.A.name)).map((r) =>
+    '<div class="lr"><div class="nm">' + E(r.A.name) + "</div><div>CARD #" + E(r.c.no) + " · <b>" + E(r.c.amt > 0 ? P$(r.c.amt) : "BOKYA") + "</b></div>" +
+    (r.c.done ? '<span class="xsc ok">NAKASKAS · ' + E(RT.stamp(r.c.done.at)) + "</span>" + (r.c.amt > 0 ? '<label class="xsw"><input type="checkbox" data-xpaid="' + E(r.k) + '"' + (r.c.paid ? " checked" : "") + "> <span>BAYAD NA</span></label>" : "")
+      : '<span class="xsc">HINDI PA NAKAKASKAS</span>') + '<p class="muted" data-xpm="' + E(r.k) + '"></p></div>').join("");
+  return h + "</section>";
+}
+function xsBind() {
+  const sec = $("#s-scr"); if (!sec || !ST.scratch) return;
+  const X = ST.scratch;
+  sec.querySelectorAll("[data-xa],[data-xn]").forEach((inp) => { inp.oninput = () => {
+    const i = Number(inp.dataset.xa != null ? inp.dataset.xa : inp.dataset.xn); if (!X.deck[i]) return;
+    if (inp.dataset.xa != null) X.deck[i].amt = Number(inp.value) || 0; else X.deck[i].n = Number(inp.value) || 0;
+    $("#xsum").textContent = xsSumLine(X); draft();
+  }; });
+  sec.querySelectorAll("[data-xp]").forEach((b) => { b.onclick = async () => {
+    X.deck = XS_DECK[b.dataset.xp].map((r) => ({ amt: r[0], n: r[1] })); await draft();
+    here("#xsum", '<span class="ok">' + E(b.textContent) + ":</span> " + E(xsSumLine(X))); main();
+  }; });
+  sec.querySelectorAll("[data-xdel]").forEach((b) => { b.onclick = async () => { X.deck.splice(Number(b.dataset.xdel), 1); await draft(); here("#xsum", E(xsSumLine(X))); main(); }; });
+  if ($("#xadd")) $("#xadd").onclick = async () => { X.deck.push({ amt: 0, n: 1 }); await draft(); here("#xsum", E(xsSumLine(X))); main(); };
+  const dates = async () => {
+    const f = $("#xsf").value, t = $("#xst").value;
+    if (!f || !t || f > t) { $("#xsdm").innerHTML = '<span class="bad">Dapat mas maaga o pareho ang Simula sa Hanggang.</span>'; return; }
+    X.from = f; X.to = t; await draft();
+    $("#xsdm").innerHTML = '<span class="ok">Na-save ang petsa: ' + E(RT.dLabel(f)) + " hanggang " + E(RT.dLabel(t)) + ".</span>" + (X.id ? " " + E(saveHint()) : "");
+  };
+  $("#xsf").onchange = dates; $("#xst").onchange = dates;
+  sec.querySelectorAll("[data-xw]").forEach((c) => { c.onchange = () => { X.picked = 1; X.who[c.dataset.xw] = c.checked ? 1 : 0; draft(); }; });
+  $("#xdeal").onclick = async () => {
+    sec.querySelectorAll("[data-xw]").forEach((c) => { X.who[c.dataset.xw] = c.checked || c.disabled ? 1 : 0; });
+    X.picked = 1;
+    const r = xsDeal(X); await draft();
+    if (r.err) here("#xsm", (r.n ? '<span class="ok">Naibigay ang ' + r.n + " card.</span> " : "") + '<span class="bad">' + E(r.err) + "</span>");
+    else here("#xsm", '<span class="ok">Naibigay ang ' + r.n + " card · " + E(RT.stamp(Date.now())) + ".</span> " + E(saveHint()) + " Lalabas ang card sa passbook sa " + E(RT.dLabel(X.from)) + ".");
+    main();
+  };
+  $("#xtry").onclick = () => {
+    const amts = []; X.deck.forEach((r) => { for (let i = 0; i < xsN(r); i++) amts.push(xsA(r)); });
+    const amt = amts.length ? amts[Math.floor(Math.random() * amts.length)] : 10, no = 1 + Math.floor(Math.random() * Math.max(1, amts.length));
+    const ov = document.createElement("div"); ov.className = "xso"; ov.innerHTML = '<div class="xsp" role="dialog" aria-modal="true"></div>'; document.body.appendChild(ov);
+    RT.scratchCard(ov.firstChild, { no, amt, note: "Subok lang ito. Walang naitatala.", closeText: "ISARA", onClose: () => ov.remove() });
+  };
+  $("#xcopy").onclick = async () => {
+    X.msg = $("#xsmsg").value.trim() || XS_MSG; await draft();
+    $("#xcm").innerHTML = (await copy(X.msg)) ? '<span class="ok">Nakopya na. I-paste sa Messenger.</span>' : E(X.msg);
+  };
+  sec.querySelectorAll("[data-xpaid]").forEach((c) => { c.onchange = async () => {
+    const k = c.dataset.xpaid, cd = X.cards[k]; if (!cd) return;
+    cd.paid = c.checked ? 1 : 0; await draft();
+    here('[data-xpm="' + CSS.escape(k) + '"]', c.checked ? '<span class="ok">Naitala: bayad na ang ' + E(P$(cd.amt)) + ".</span>" : '<span class="ok">Naitala: hindi pa bayad.</span>'); main();
+  }; });
+}
+/* R5:SCRATCH:END */
 
 function bind() {
   $("#xl").onchange = async (e) => {
@@ -1800,26 +1955,38 @@ function bind() {
       const r = merge(X); await draft();
       const n = Object.values(X.accts).filter(listed);
       const nokey = X.views.filter((w) => !w.ok && (!X.accts[w.akey] || listed(X.accts[w.akey]))).map((w) => w.name);
-      MSG = "Nabasa: " + n.filter((a) => a.type === "B").length + " borrowers, " + n.filter((a) => a.type === "I").length + " investors, " + n.filter((a) => a.type === "W").length + " taga-withdraw (as of " + RT.dLabel(X.set.asof) + "). Bagong pipirmahan: " + r.add + ", na-update: " + r.upd + (r.gone ? ", kinansela (wala na sa Excel): " + r.gone : "") + ". " + (nokey.length ? "Walang tamang PASSBOOK KEY sa Excel: " + nokey.join(", ") + ". " : "") + "Huwag kalimutang i-download at i-upload ang data.json.";
+      const txt = n.filter((a) => a.type === "B").length + " borrowers, " + n.filter((a) => a.type === "I").length + " investors, " + n.filter((a) => a.type === "W").length + " taga-withdraw (as of " + RT.dLabel(X.set.asof) + "). Bagong pipirmahan: " + r.add + ", na-update: " + r.upd + (r.gone ? ", kinansela (wala na sa Excel): " + r.gone : "") + ".";
+      here("#xlm", '<span class="ok">Nabasa ang Excel · ' + E(RT.stamp(Date.now())) + ".</span> " + E(txt) + (nokey.length ? ' <span class="bad">Walang tamang PASSBOOK KEY sa Excel: ' + E(nokey.join(", ")) + ".</span>" : "") + " " + E(saveHint()));
       main();
-    } catch (err) { $("#xlm").innerHTML = '<span class="bad">' + E(err.message || err) + "</span>"; }
+    } catch (err) { $("#xlm").innerHTML = '<span class="bad">Hindi nabasa ang Excel: ' + E(err.message || err) + "</span>"; }
   };
   $("#rs").onchange = async (e) => {
-    let t = { sig: 0, ask: 0, bad: 0, old: 0, app: 0 };
-    for (const f of e.target.files) {
-      const texts = /\.zip$/i.test(f.name) || /zip/i.test(f.type) ? await unzipCsv(f).catch(() => []) : [await f.text()];
-      for (const tx of texts) { const r = await applyResponses(tx); Object.keys(t).forEach((k) => (t[k] += r[k])); }
+    const files = Array.from(e.target.files || []); if (!files.length) return;
+    $("#rsm").textContent = "Binabasa ang file…";
+    const t = { sig: 0, ask: 0, bad: 0, old: 0, app: 0, scr: 0, rows: 0 }, unread = [];
+    for (const f of files) {
+      let texts = [], got = 0;
+      try { texts = /\.zip$/i.test(f.name) || /zip/i.test(f.type) ? await unzipCsv(f) : [await f.text()]; } catch (_) { texts = []; }
+      for (const tx of texts) { const r = await applyResponses(tx); Object.keys(t).forEach((k) => (t[k] += r[k] || 0)); got += r.rows || 0; }
+      if (!got) unread.push(f.name);
     }
     await draft();
-    MSG = "Bagong pirma: " + t.sig + " · bagong tanong o tutol: " + t.ask + (t.app ? " · bagong loan application: " + t.app : "") + (t.bad ? " · hindi tugma (hindi tinanggap): " + t.bad : "") + (t.old ? " · dati nang nabasa: " + t.old : "") + ".";
-    main();
+    const parts = ["Bagong pirma: " + t.sig, "bagong tanong o tutol: " + t.ask];
+    if (t.app) parts.push("bagong loan application: " + t.app);
+    if (t.scr) parts.push("bagong kaskas sa Mystery Scratch: " + t.scr);
+    if (t.old) parts.push("dati nang nabasa: " + t.old);
+    let h = t.rows ? '<span class="ok">Nabasa ang file · ' + E(RT.stamp(Date.now())) + ".</span> " + E(parts.join(" · ") + ".") : "";
+    if (t.bad) h += ' <span class="bad">Hindi tugma (hindi tinanggap): ' + t.bad + ".</span>";
+    if (unread.length) h += ' <span class="bad">Walang sagot ng Google Form sa ' + E(unread.join(", ")) + ".</span>";
+    if (t.sig + t.ask + t.app + t.scr) h += " " + E(saveHint());
+    here("#rsm", h); main();
   };
   document.querySelectorAll("[data-solve]").forEach((b) => (b.onclick = async () => {
     const [id, i] = [b.dataset.solve.slice(0, b.dataset.solve.lastIndexOf("|")), Number(b.dataset.solve.split("|").pop())];
     const it = ST.items[id], c = it.concerns[i], ta = document.querySelector('[data-reply="' + b.dataset.solve.replace(/"/g, '\\"') + '"]');
     c.resolved = true; c.reply = ta ? ta.value.trim() : ""; c.replyAt = Date.now();
     if (!Object.keys(it.sigs || {}).length) it.restart = Date.now();
-    await draft(); MSG = "Naayos na ang tanong ni " + c.by + "."; main();
+    await draft(); here("#cnm", '<span class="ok">Naayos na ang tanong ni ' + E(c.by) + ".</span> " + E(saveHint())); main();
   }));
   document.querySelectorAll("[data-link]").forEach((b) => (b.onclick = async () => { const l = LINKS[b.dataset.link]; const ok = await copy(BASE + "#" + l.link); b.textContent = ok ? "Nakopya ✓" : BASE + "#" + l.link; }));
   document.querySelectorAll("[data-msg]").forEach((b) => (b.onclick = async () => {
@@ -1843,7 +2010,7 @@ function bind() {
     const vs = viewersOf(k), roles = {}; vs.forEach((v) => { roles[v.name] = v.role; });
     const id = "C|" + Date.now();
     ST.items[id] = { id, kind: "C", acct: k, holder: A.name, signers: [A.name], roles, title: t.toUpperCase(), lines, sent: Date.now(), sigs: {}, concerns: [] };
-    await draft(); MSG = "Naidagdag ang pipirmahan para kay " + A.name + "."; main();
+    await draft(); here("#cam", '<span class="ok">Naidagdag ang pipirmahan para kay ' + E(A.name) + ".</span> " + E(saveHint())); main();
   };
   $("#save2").onclick = async () => {
     ST.days = Math.max(1, Math.min(60, Number($("#dy").value) || 7));
@@ -1851,7 +2018,7 @@ function bind() {
     ["B", "I", "W", "PN", "PNB"].forEach((k) => { const v = $("#tp" + k).value.trim(); if (v) ST.tpl[k] = v; });
     const fs = parseForm($("#fs").value), fc = parseForm($("#fc").value);
     ST.form = { signRaw: $("#fs").value.trim(), concernRaw: $("#fc").value.trim(), sign: fs, concern: fc };
-    await draft(); MSG = (fs && fc ? "Nakakabit na ang dalawang Google Form." : "Na-save. Hindi pa kumpleto ang Passbook Signatures at Passbook Concerns (kailangan ang pre-filled link na may 1, 2, 3).") + " Huwag kalimutang i-download at i-upload ang data.json."; main();
+    await draft(); here("#fsm", (fs && fc ? '<span class="ok">Na-save. Nakakabit na ang dalawang Google Form.</span>' : '<span class="ok">Na-save.</span> <span class="bad">Hindi pa kumpleto ang Passbook Signatures at Passbook Concerns (kailangan ang pre-filled link na may 1, 2, 3).</span>') + " " + E(saveHint())); main();
   };
   $("#dl").onclick = async () => {
     if (!Object.keys(ST.accounts).length) { $("#dlm").textContent = "Basahin muna ang Excel."; return; }
