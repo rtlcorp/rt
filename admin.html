@@ -79,7 +79,7 @@ section.k>h2::before,section.k>details>summary.big::before{content:"";display:in
 .k-sulat{--k:#9D174D}
 .k-app{--k:#1F5FAE}
 .k-scr{--k:#D35400}
-.xsr{display:flex;align-items:center;gap:8px;margin:6px 0}.xsr input{width:104px;min-height:48px;font:18px Arial,sans-serif;padding:6px 10px;border:2px solid var(--line);border-radius:8px}.xsr .btn{width:auto;min-height:44px;margin:0;padding:0 14px}
+.xsr{display:flex;align-items:center;gap:8px;margin:6px 0}.xsr input{width:104px;min-height:48px;font:18px Arial,sans-serif;padding:6px 10px;border:2px solid var(--line);border-radius:8px}.xsr input[data-xa]{flex:1;min-width:0;width:auto}.xsr input[data-xn]{width:84px;flex:none}.xsonoff{border-radius:8px;padding:10px 12px;font-size:16px;margin:10px 0 6px}.xsonoff.on{background:#E3F4E8;color:#14532D}.xsonoff.off{background:#EEF0F4;color:#3D4555}.xsr .btn{width:auto;min-height:44px;margin:0;padding:0 14px}
 .xsw{display:flex;align-items:center;gap:10px;font-weight:400;margin:6px 0;min-height:40px}.xsw input{width:24px;height:24px;flex:none}.xsw small{color:var(--muted)}
 .xsc{display:inline-block;border-radius:999px;padding:3px 12px;font-size:14px;font-weight:700;background:#EEF0F4;color:#5B6475;margin-top:6px}.xsc.ok{background:#E3F4E6;color:#1E7B34}
 .xso{position:fixed;inset:0;background:rgba(15,20,26,.88);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;z-index:50}.xsp{background:#fff;border-radius:24px;padding:20px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
@@ -505,7 +505,7 @@ async function build() {
       signers: it.signers, roles: it.roles, any: it.any, sent: it.sent, restart: it.restart, sigs: Object.fromEntries(Object.entries(it.sigs || {}).map(([n, s]) => [n, { at: s.at, path: s.path }])),
       concerns: (it.concerns || []).map((c) => ({ at: c.at, by: c.by, msg: c.msg, resolved: c.resolved, reply: c.reply, replyAt: c.replyAt })) }));
     const X = ST.scratch, xc = X && X.id && X.cards && l.holder ? X.cards[A.key] : null;
-    const scratch = xc ? { id: "X|" + X.id, no: xc.no, amt: xc.amt, from: X.from, to: X.to, done: xc.done ? { at: xc.done.at } : null } : undefined;
+    const scratch = xc && !X.off ? { id: "X|" + X.id, no: xc.no, amt: xc.amt, from: X.from, to: X.to, done: xc.done ? { at: xc.done.at } : null } : undefined;
     people[l.pid] = await RT.seal(await RT.aesKey(l.link), { v: 1, viewer: { name: l.name, role: l.role }, acct: A, items, co: ST.co, asof: ST.asof, period: ST.period, days: ST.days, updated: now, scratch });
   }
   const out = { v: 1, updated: now, salt: ST.salt, verifier: ST.verifier, days: ST.days, form: ST.form,
@@ -1831,30 +1831,50 @@ function appsBind() {
    One card per chosen account, inside its own passbook; only the holder scratches it, once.
    RT Admin draws every card number and prize from one deck, so no card is used twice and the total never goes over the deck.
    Before the start date the deck can be shuffled again; from the start date every card stays and only the newly ticked get one. */
+/* R6:SCRATCH — item prizes, off until she turns it on (Nov 21, 20:08) */
 const XS_DECK = { B: [[50, 2], [20, 5], [10, 13], [5, 15], [2, 15]], A: [[50, 2], [20, 5], [10, 10], [5, 13], [0, 20]] };
 const XS_MSG = "Magandang araw! May Mystery Scratch & Win ka sa passbook mo ngayong Disyembre. Buksan ang link ng passbook mo at kaskasin ang card mo. Isang beses lang ito. Salamat!";
 function xsState() {
-  const y = RT.ymd(Date.now()).slice(0, 4);
-  const X = ST.scratch = Object.assign({ from: y + "-12-01", to: y + "-12-31", deck: XS_DECK.B.map((r) => ({ amt: r[0], n: r[1] })), who: {}, picked: 0, cards: {}, left: [], id: "", dealt: 0, msg: XS_MSG }, ST.scratch || {});
+  const X = ST.scratch = Object.assign({ from: "", to: "", deck: XS_DECK.B.map((r) => ({ amt: r[0], n: r[1] })), who: {}, picked: 0, cards: {}, left: [], id: "", dealt: 0, msg: XS_MSG, off: 0 }, ST.scratch || {});
+  if (!X.id && !X.dset) { X.from = ""; X.to = ""; } // R6: off until she sets the dates herself (R5 filled in Dec 1–31 by itself)
   if (!X.picked) { X.who = {}; Object.values(ST.accounts).forEach((A) => { if (A.type === "B" && A.status === "ACTIVE") X.who[A.key] = 1; }); }
   return X;
 }
-const xsN = (r) => Math.max(0, Math.floor(+r.n || 0)), xsA = (r) => Math.max(0, Math.round((+r.amt || 0) * 100) / 100);
-const xsCount = (X) => X.deck.reduce((n, r) => n + xsN(r), 0);
-const xsSum = (X) => X.deck.reduce((n, r) => n + xsA(r) * xsN(r), 0);
-const xsOpen = (X) => !!X.id && RT.ymd(Date.now()) >= X.from; // from the start date the cards can be scratched: they stay as they are
-const xsSumLine = (X) => xsCount(X) + " card · kabuuan " + P$(xsSum(X)) + " · ₱0 = BOKYA";
+// R6: a prize is a peso amount (0 = BOKYA) or an item's name; a blank row is no prize yet
+function xsP(v) {
+  if (typeof v === "number") return isFinite(v) ? Math.max(0, Math.round(v * 100) / 100) : null;
+  const s = String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+  if (!s) return null;
+  const t = s.replace(/^php/i, "").replace(/[₱,\s]/g, "");
+  if (!t || /^bokya$/i.test(s)) return 0;
+  if (/^\d+(\.\d+)?$/.test(t)) return Math.round(+t * 100) / 100;
+  return s.slice(0, 40);
+}
+const xsN = (r) => Math.max(0, Math.floor(+r.n || 0)), xsA = (r) => xsP(r.amt);
+const xsIt = (v) => typeof v === "string" && v !== "";
+const xsShow = (v) => (v === null || v === "" ? "" : xsIt(v) ? v : v > 0 ? P$(v) : "BOKYA");
+const xsRows = (X) => X.deck.filter((r) => xsA(r) !== null && xsN(r) > 0);
+const xsCount = (X) => xsRows(X).reduce((n, r) => n + xsN(r), 0);
+const xsSum = (X) => xsRows(X).reduce((n, r) => n + (xsIt(xsA(r)) ? 0 : xsA(r) * xsN(r)), 0);
+const xsTot = (l) => { const cash = l.reduce((n, c) => n + (xsIt(c.amt) ? 0 : +c.amt || 0), 0), it = l.filter((c) => xsIt(c.amt)).length;
+  return [cash || !it ? P$(cash) : "", it ? it + " bagay" : ""].filter(Boolean).join(" + "); };
+const xsOpen = (X) => !!X.id && !!X.from && RT.ymd(Date.now()) >= X.from; // from the start date the cards can be scratched: they stay as they are
+const xsSumLine = (X) => { const rows = xsRows(X), items = rows.filter((r) => xsIt(xsA(r))).map((r) => xsA(r) + " ×" + xsN(r)),
+  bk = rows.reduce((n, r) => n + (xsA(r) === 0 ? xsN(r) : 0), 0);
+  return xsCount(X) + " card · pera " + P$(xsSum(X)) + (items.length ? " · " + items.join(" · ") : "") + (bk ? " · BOKYA ×" + bk : ""); };
 function xsShuffle(a) { const r = new Uint32Array(a.length); crypto.getRandomValues(r); for (let i = a.length - 1; i > 0; i--) { const j = r[i] % (i + 1), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+const xsDeck = (X) => { const p = []; xsRows(X).forEach((r) => { for (let i = 0; i < xsN(r); i++) p.push(xsA(r)); }); return p; };
 function xsDeal(X) {
+  if (!X.from || !X.to) return { err: "Ilagay muna ang Simula at Hanggang." };
   const want = Object.keys(X.who).filter((k) => X.who[k] && ST.accounts[k] && listed(ST.accounts[k]));
   if (!want.length) return { err: "Pumili muna kung sino ang may card." };
   if (!xsOpen(X)) { // the first time, or before the start date: a fresh shuffle of the whole deck
-    const amts = []; X.deck.forEach((r) => { for (let i = 0; i < xsN(r); i++) amts.push(xsA(r)); });
+    const amts = xsDeck(X);
     if (want.length > amts.length) return { err: "Kulang ang card: " + amts.length + " card para sa " + want.length + " tao. Dagdagan ang mga premyo." };
     xsShuffle(amts);
     const pool = xsShuffle(amts.map((amt, i) => ({ no: i + 1, amt })));
     X.cards = {}; xsShuffle(want.slice()).forEach((k) => { const c = pool.pop(); X.cards[k] = { no: c.no, amt: c.amt, at: Date.now() }; });
-    X.left = pool; X.id = RT.b64u(crypto.getRandomValues(new Uint8Array(9))); X.dealt = Date.now();
+    X.left = pool; X.id = RT.b64u(crypto.getRandomValues(new Uint8Array(9))); X.dealt = Date.now(); X.off = 0;
     return { n: want.length };
   }
   let n = 0; // from the start date: every card stays; the newly ticked get one from the cards left
@@ -1863,20 +1883,24 @@ function xsDeal(X) {
     if (!X.left.length) return { err: "Ubos na ang card para kay " + ST.accounts[k].name + ".", n };
     xsShuffle(X.left); const c = X.left.pop(); X.cards[k] = { no: c.no, amt: c.amt, at: Date.now() }; n++;
   }
+  X.off = 0;
   return { n };
 }
 function xsHTML() {
   const head = '<section class="k k-scr" id="s-scr"><h2>Mystery Scratch &amp; Win</h2>';
   if (!Object.keys(ST.accounts).length) return head + '<p class="muted">Basahin muna ang Excel.</p></section>';
-  const X = xsState(), open = xsOpen(X);
+  const X = xsState(), open = xsOpen(X), on = !!X.id && !X.off;
   const cards = Object.entries(X.cards).filter(([k]) => ST.accounts[k]).map(([k, c]) => ({ k, c, A: ST.accounts[k] }));
-  const got = cards.filter((r) => r.c.done), paid = got.filter((r) => r.c.paid), sum = (l) => l.reduce((n, r) => n + (+r.c.amt || 0), 0);
+  const got = cards.filter((r) => r.c.done), paid = got.filter((r) => r.c.paid);
   let h = head + '<p class="muted">Isang card bawat napili, nasa sariling passbook nila. Ang may-ari ng passbook lang ang makakakaskas, at isang beses lang. Darating dito ang resulta kapag binasa mo ang mga sagot sa <b>2 · Mga sagot mula sa Google Form</b>.</p>';
-  if (X.id) h += '<div class="xv"><p><b>Naibigay:</b> ' + cards.length + " card · kabuuang premyo " + E(P$(sum(cards))) + "</p><p><b>Nakaskas:</b> " + got.length + " · " + E(P$(sum(got))) +
-    "</p><p><b>Bayad na:</b> " + paid.length + " · " + E(P$(sum(paid))) + "</p><p><b>Natitirang card:</b> " + X.left.length + "</p></div>";
+  h += '<div class="xsonoff ' + (on ? "on" : "off") + '" id="xstat"><b>' + (on ? "NAKA-ON" : "NAKA-OFF") + "</b> · " + E(on ? "Lalabas ang card sa passbook mula " + RT.dLabel(X.from) + " hanggang " + RT.dLabel(X.to) + "."
+    : X.id ? "Nakatago sa passbook ang mga card." : "Walang lalabas sa passbook hangga't hindi mo naibibigay ang mga card.") + "</div>" +
+    (X.id ? '<button class="btn ' + (on ? "lite" : "pri") + '" id="xonoff">' + (on ? "I-OFF ANG MYSTERY SCRATCH" : "I-ON ULIT") + "</button>" : "") + '<p id="xom" class="muted"></p>';
+  if (X.id) h += '<div class="xv"><p><b>Naibigay:</b> ' + cards.length + " card · " + E(xsTot(cards.map((r) => r.c))) + "</p><p><b>Nakaskas:</b> " + got.length + " · " + E(xsTot(got.map((r) => r.c))) +
+    "</p><p><b>Bayad o naibigay na ang premyo:</b> " + paid.length + " · " + E(xsTot(paid.map((r) => r.c))) + "</p><p><b>Natitirang card:</b> " + X.left.length + "</p></div>";
   h += '<label for="xsf">Simula</label><input type="date" id="xsf" value="' + E(X.from) + '"><label for="xst">Hanggang</label><input type="date" id="xst" value="' + E(X.to) + '"><p id="xsdm" class="muted"></p>';
-  h += '<p class="slg">Mga premyo (halaga × ilang card)</p>' + (open ? "" : '<div class="row"><button class="btn lite" data-xp="B">LAHAT PANALO</button><button class="btn lite" data-xp="A">MAY BOKYA</button></div>') +
-    X.deck.map((r, i) => '<div class="xsr"><span>₱</span><input type="number" min="0" step="1" inputmode="numeric" data-xa="' + i + '" value="' + E(String(r.amt)) + '"' + (open ? " disabled" : "") +
+  h += '<p class="slg">Mga premyo (₱ halaga, BOKYA o bagay × ilang card)</p>' + (open ? "" : '<div class="row"><button class="btn lite" data-xp="B">LAHAT PANALO</button><button class="btn lite" data-xp="A">MAY BOKYA</button></div>') +
+    X.deck.map((r, i) => '<div class="xsr"><input type="text" maxlength="40" autocomplete="off" placeholder="₱50, BOKYA o bagay" data-xa="' + i + '" value="' + E(xsShow(xsA(r))) + '"' + (open ? " disabled" : "") +
       '><span>×</span><input type="number" min="0" step="1" inputmode="numeric" data-xn="' + i + '" value="' + E(String(r.n)) + '"' + (open ? " disabled" : "") + ">" +
       (open ? "" : '<button class="btn lite" data-xdel="' + i + '" aria-label="Alisin ang premyong ito">✕</button>') + "</div>").join("") +
     (open ? "" : '<button class="btn lite" id="xadd">DAGDAG NA PREMYO</button>') + '<p class="muted" id="xsum">' + E(xsSumLine(X)) + "</p>";
@@ -1888,8 +1912,8 @@ function xsHTML() {
   h += '<button class="btn sec" id="xtry">SUBUKAN ANG CARD</button>';
   h += '<label for="xsmsg">Mensahe para sa Messenger</label><textarea id="xsmsg" rows="4">' + E(X.msg || XS_MSG) + '</textarea><button class="btn sec" id="xcopy">KOPYAHIN ANG MENSAHE</button><p id="xcm" class="muted"></p>';
   if (cards.length) h += '<p class="slg">Mga card</p>' + cards.sort((a, b) => a.A.name.localeCompare(b.A.name)).map((r) =>
-    '<div class="lr"><div class="nm">' + E(r.A.name) + "</div><div>CARD #" + E(r.c.no) + " · <b>" + E(r.c.amt > 0 ? P$(r.c.amt) : "BOKYA") + "</b></div>" +
-    (r.c.done ? '<span class="xsc ok">NAKASKAS · ' + E(RT.stamp(r.c.done.at)) + "</span>" + (r.c.amt > 0 ? '<label class="xsw"><input type="checkbox" data-xpaid="' + E(r.k) + '"' + (r.c.paid ? " checked" : "") + "> <span>BAYAD NA</span></label>" : "")
+    '<div class="lr"><div class="nm">' + E(r.A.name) + "</div><div>CARD #" + E(r.c.no) + " · <b>" + E(RT.prizeText(r.c.amt)) + "</b></div>" +
+    (r.c.done ? '<span class="xsc ok">NAKASKAS · ' + E(RT.stamp(r.c.done.at)) + "</span>" + (RT.prizeWin(r.c.amt) ? '<label class="xsw"><input type="checkbox" data-xpaid="' + E(r.k) + '"' + (r.c.paid ? " checked" : "") + "> <span>" + (xsIt(r.c.amt) ? "NAIBIGAY NA" : "BAYAD NA") + "</span></label>" : "")
       : '<span class="xsc">HINDI PA NAKAKASKAS</span>') + '<p class="muted" data-xpm="' + E(r.k) + '"></p></div>').join("");
   return h + "</section>";
 }
@@ -1898,7 +1922,7 @@ function xsBind() {
   const X = ST.scratch;
   sec.querySelectorAll("[data-xa],[data-xn]").forEach((inp) => { inp.oninput = () => {
     const i = Number(inp.dataset.xa != null ? inp.dataset.xa : inp.dataset.xn); if (!X.deck[i]) return;
-    if (inp.dataset.xa != null) X.deck[i].amt = Number(inp.value) || 0; else X.deck[i].n = Number(inp.value) || 0;
+    if (inp.dataset.xa != null) { const v = xsP(inp.value); X.deck[i].amt = v === null ? "" : v; } else X.deck[i].n = Number(inp.value) || 0;
     $("#xsum").textContent = xsSumLine(X); draft();
   }; });
   sec.querySelectorAll("[data-xp]").forEach((b) => { b.onclick = async () => {
@@ -1906,25 +1930,31 @@ function xsBind() {
     here("#xsum", '<span class="ok">' + E(b.textContent) + ":</span> " + E(xsSumLine(X))); main();
   }; });
   sec.querySelectorAll("[data-xdel]").forEach((b) => { b.onclick = async () => { X.deck.splice(Number(b.dataset.xdel), 1); await draft(); here("#xsum", E(xsSumLine(X))); main(); }; });
-  if ($("#xadd")) $("#xadd").onclick = async () => { X.deck.push({ amt: 0, n: 1 }); await draft(); here("#xsum", E(xsSumLine(X))); main(); };
+  if ($("#xadd")) $("#xadd").onclick = async () => { X.deck.push({ amt: "", n: 1 }); await draft(); here("#xsum", E(xsSumLine(X))); main();
+    const ins = document.querySelectorAll("#s-scr [data-xa]"); if (ins.length) ins[ins.length - 1].focus(); };
   const dates = async () => {
     const f = $("#xsf").value, t = $("#xst").value;
-    if (!f || !t || f > t) { $("#xsdm").innerHTML = '<span class="bad">Dapat mas maaga o pareho ang Simula sa Hanggang.</span>'; return; }
-    X.from = f; X.to = t; await draft();
+    if (!f || !t) { $("#xsdm").innerHTML = '<span class="muted">Ilagay ang Simula at Hanggang.</span>'; return; }
+    if (f > t) { $("#xsdm").innerHTML = '<span class="bad">Dapat mas maaga o pareho ang Simula sa Hanggang.</span>'; return; }
+    X.from = f; X.to = t; X.dset = 1; await draft();
     $("#xsdm").innerHTML = '<span class="ok">Na-save ang petsa: ' + E(RT.dLabel(f)) + " hanggang " + E(RT.dLabel(t)) + ".</span>" + (X.id ? " " + E(saveHint()) : "");
   };
   $("#xsf").onchange = dates; $("#xst").onchange = dates;
+  if ($("#xonoff")) $("#xonoff").onclick = async () => {
+    X.off = X.off ? 0 : 1; await draft();
+    here("#xom", '<span class="ok">' + E(X.off ? "Naka-off na: nakatago ang mga card sa passbook." : xsOpen(X) ? "Naka-on ulit: nasa passbook ulit ang mga card." : "Naka-on ulit: lalabas ang card sa passbook mula " + RT.dLabel(X.from) + ".") + "</span> " + E(saveHint())); main();
+  };
   sec.querySelectorAll("[data-xw]").forEach((c) => { c.onchange = () => { X.picked = 1; X.who[c.dataset.xw] = c.checked ? 1 : 0; draft(); }; });
   $("#xdeal").onclick = async () => {
     sec.querySelectorAll("[data-xw]").forEach((c) => { X.who[c.dataset.xw] = c.checked || c.disabled ? 1 : 0; });
     X.picked = 1;
     const r = xsDeal(X); await draft();
     if (r.err) here("#xsm", (r.n ? '<span class="ok">Naibigay ang ' + r.n + " card.</span> " : "") + '<span class="bad">' + E(r.err) + "</span>");
-    else here("#xsm", '<span class="ok">Naibigay ang ' + r.n + " card · " + E(RT.stamp(Date.now())) + ".</span> " + E(saveHint()) + " Lalabas ang card sa passbook sa " + E(RT.dLabel(X.from)) + ".");
+    else here("#xsm", '<span class="ok">Naibigay ang ' + r.n + " card · " + E(RT.stamp(Date.now())) + ".</span> " + E(saveHint()) + " " + E(xsOpen(X) ? "Naka-on na: nasa passbook na ang card." : "Naka-on na: lalabas ang card sa passbook sa " + RT.dLabel(X.from) + "."));
     main();
   };
   $("#xtry").onclick = () => {
-    const amts = []; X.deck.forEach((r) => { for (let i = 0; i < xsN(r); i++) amts.push(xsA(r)); });
+    const amts = xsDeck(X);
     const amt = amts.length ? amts[Math.floor(Math.random() * amts.length)] : 10, no = 1 + Math.floor(Math.random() * Math.max(1, amts.length));
     const ov = document.createElement("div"); ov.className = "xso"; ov.innerHTML = '<div class="xsp" role="dialog" aria-modal="true"></div>'; document.body.appendChild(ov);
     RT.scratchCard(ov.firstChild, { no, amt, note: "Subok lang ito. Walang naitatala.", closeText: "ISARA", onClose: () => ov.remove() });
@@ -1936,7 +1966,8 @@ function xsBind() {
   sec.querySelectorAll("[data-xpaid]").forEach((c) => { c.onchange = async () => {
     const k = c.dataset.xpaid, cd = X.cards[k]; if (!cd) return;
     cd.paid = c.checked ? 1 : 0; await draft();
-    here('[data-xpm="' + CSS.escape(k) + '"]', c.checked ? '<span class="ok">Naitala: bayad na ang ' + E(P$(cd.amt)) + ".</span>" : '<span class="ok">Naitala: hindi pa bayad.</span>'); main();
+    const what = RT.prizeText(cd.amt), it = xsIt(cd.amt);
+    here('[data-xpm="' + CSS.escape(k) + '"]', '<span class="ok">' + E(c.checked ? (it ? "Naitala: naibigay na ang " + what + "." : "Naitala: bayad na ang " + what + ".") : (it ? "Naitala: hindi pa naibibigay." : "Naitala: hindi pa bayad.")) + "</span>"); main();
   }; });
 }
 /* R5:SCRATCH:END */
