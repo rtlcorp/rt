@@ -152,6 +152,93 @@
     return true;
   };
 
+  /* ---------- Mystery Scratch & Win (R5): her scratch card, shared by the passbook and RT Admin ---------- */
+  RT.scratchLabel = (no, amt) => "MYSTERY SCRATCH · CARD #" + no + " · " + (+amt > 0 ? RT.peso(amt) : "BOKYA");
+  const XS_CSS = '.xs{color:#2f3542;text-align:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:8px 2px 4px}' +
+    ".xs .xs-b{display:inline-block;background:#ffeaa7;color:#d35400;font-weight:800;font-size:13px;padding:5px 12px;border-radius:20px;margin-bottom:8px}" +
+    ".xs h2.xs-h{margin:4px 0 6px;font-size:22px;font-weight:900;line-height:1.25;color:#2f3542;letter-spacing:0;text-transform:none}" +
+    ".xs .xs-s{margin:0 0 16px;font-size:14px;color:#57606f}" +
+    ".xs .xs-w{position:relative;width:270px;height:165px;margin:0 auto 14px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#fff9e6,#ffeaa7);border:3px dashed #ffa502;box-shadow:inset 0 0 12px rgba(0,0,0,.12)}" +
+    ".xs .xs-p{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}" +
+    ".xs .xs-a{font-size:46px;font-weight:900;color:#e84118;line-height:1.1}.xs .xs-a.bk{font-size:28px;color:#747d8c}" +
+    ".xs .xs-l{font-size:13px;font-weight:800;color:#2f3542;margin-top:4px}" +
+    ".xs .xs-w canvas{position:absolute;inset:0;z-index:2;width:270px;height:165px;touch-action:none;cursor:crosshair}" +
+    ".xs .xs-st{background:#f1f2f6;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;color:#2f3542}" +
+    ".xs .xs-st.win{background:#d4edda;color:#155724}.xs .xs-st.lock{background:#ffeaa7;color:#b33939}" +
+    ".xs .xs-n{margin-top:10px;font-size:14px;color:#1e90ff;font-weight:800}.xs .xs-n:empty{display:none}" +
+    ".xs .xs-c{margin-top:12px;background:#2f3542;color:#fff;border:0;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;width:100%;min-height:48px}" +
+    "#xsConf{position:fixed;inset:0;pointer-events:none;z-index:999}";
+  RT.scratchCard = function (host, o) { // o: {no, amt, locked, note, closeText, onFirst, onReveal, onClose}
+    if (!document.getElementById("xsCss")) { const st = document.createElement("style"); st.id = "xsCss"; st.textContent = XS_CSS; document.head.appendChild(st); }
+    const esc = RT.esc, amt = +o.amt || 0, win = amt > 0, P = RT.peso(amt);
+    host.innerHTML = '<div class="xs"><div class="xs-b">MYSTERY CARD #' + esc(o.no) + "</div>" +
+      '<h2 class="xs-h">' + (o.locked ? "🔒 Naka-Lock Na Ang Card Mo!" : "✨ Kaskasin Mo Na!") + "</h2>" +
+      '<p class="xs-s">' + (o.locked ? "Isang beses lang pwedeng kaskasin ang card mo." : "Kapag sinimulan nang kaskasin, naka-lock na ito!") + "</p>" +
+      '<div class="xs-w"><div class="xs-p"><div class="xs-a' + (win ? "" : " bk") + '">' + (win ? esc(P) : "BOKYA 😢") + '</div><div class="xs-l">' +
+      (win ? (o.locked ? "VERIFIED PRIZE MO!" : "CONGRATULATIONS! PANALO KA!") : (o.locked ? "Salamat sa pagsali!" : "Better luck next time!")) + "</div></div>" +
+      (o.locked ? "" : '<canvas width="270" height="165" aria-label="Kaskasin dito gamit ang daliri"></canvas>') + "</div>" +
+      '<div class="xs-st' + (o.locked ? " lock" : "") + '">' + (o.locked ? (win ? "Verified Premyo Mo: " + esc(P) : "Salamat sa pagsali!") : "Gamitin ang daliri para kaskasin ang silver box 👆") + "</div>" +
+      '<div class="xs-n">' + (o.note || "") + "</div>" +
+      '<button class="xs-c" type="button">' + esc(o.closeText || "Bumalik sa passbook") + "</button></div>";
+    const close = host.querySelector(".xs-c"), st = host.querySelector(".xs-st"), note = host.querySelector(".xs-n"), cv = host.querySelector("canvas");
+    close.onclick = () => { if (o.onClose) o.onClose(); };
+    const api = { note(h) { note.innerHTML = h || ""; }, revealed: !!o.locked };
+    if (!cv) return api;
+    const x = cv.getContext("2d");
+    const g = x.createLinearGradient(0, 0, 270, 165); g.addColorStop(0, "#bdc3c7"); g.addColorStop(0.5, "#ecf0f1"); g.addColorStop(1, "#95a5a6");
+    x.fillStyle = g; x.fillRect(0, 0, 270, 165);
+    x.fillStyle = "#2f3542"; x.font = "bold 17px sans-serif"; x.textAlign = "center"; x.fillText("✨ KASKASIN DITO ✨", 135, 80);
+    x.font = "12px sans-serif"; x.fillText("Card #" + o.no + " • 1 Scratch Only", 135, 102);
+    let down = false, first = false, done = false;
+    const pos = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * 270 / r.width, (e.clientY - r.top) * 165 / r.height]; };
+    function reveal() {
+      if (done) return; done = true; api.revealed = true; cv.style.display = "none"; close.style.visibility = "";
+      if (win) { st.className = "xs-st win"; st.textContent = "🎉 Yehey! Nanalo ka ng " + P + "!"; RT.confetti(); }
+      else st.textContent = "Aww, bokya! Bawi na lang sa susunod!";
+      RT.chime(win);
+      if (o.onReveal) o.onReveal();
+    }
+    function rub(e) {
+      if (done) return;
+      if (!first) { first = true; close.style.visibility = "hidden"; if (o.onFirst) o.onFirst(); } // hidden while scratching; the card does not move
+      const p = pos(e); x.globalCompositeOperation = "destination-out"; x.beginPath(); x.arc(p[0], p[1], 22, 0, Math.PI * 2); x.fill();
+      const d = x.getImageData(0, 0, 270, 165).data; let c = 0;
+      for (let i = 3; i < d.length; i += 16) if (d[i] === 0) c++;
+      if (c / (d.length / 16) * 100 > 42) reveal();
+    }
+    cv.addEventListener("pointerdown", (e) => { e.preventDefault(); down = true; try { cv.setPointerCapture(e.pointerId); } catch (_) {} rub(e); });
+    cv.addEventListener("pointermove", (e) => { if (down) { e.preventDefault(); rub(e); } });
+    const up = () => { down = false; };
+    cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+    api.reveal = reveal;
+    return api;
+  };
+  RT.chime = function (win) { // her win and bokya sounds
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      (win ? [523.25, 659.25, 783.99, 1046.5] : [300, 220]).forEach((f, i) => {
+        const os = ac.createOscillator(), gn = ac.createGain(), t = ac.currentTime + i * 0.11;
+        os.type = win ? "triangle" : "sawtooth"; os.frequency.setValueAtTime(f, t);
+        gn.gain.setValueAtTime(0.14, t); gn.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+        os.connect(gn); gn.connect(ac.destination); os.start(t); os.stop(t + 0.32);
+      });
+    } catch (_) {}
+  };
+  RT.confetti = function () { // her confetti
+    let c = document.getElementById("xsConf");
+    if (!c) { c = document.createElement("canvas"); c.id = "xsConf"; document.body.appendChild(c); }
+    const cx = c.getContext("2d"); c.width = window.innerWidth; c.height = window.innerHeight;
+    const cols = ["#ff4757", "#ffa502", "#2ed573", "#1e90ff", "#eccc68"];
+    const it = Array.from({ length: 85 }, () => ({ x: Math.random() * c.width, y: Math.random() * c.height - c.height, r: Math.random() * 6 + 4, d: Math.random() * 4 + 2, col: cols[Math.floor(Math.random() * 5)], t: Math.random() * 10 }));
+    let fr = 0;
+    (function step() {
+      cx.clearRect(0, 0, c.width, c.height);
+      it.forEach((p) => { cx.fillStyle = p.col; cx.fillRect(p.x, p.y, p.r, p.r * 1.5); p.y += p.d; p.x += Math.sin(fr * 0.05 + p.t) * 1.5; });
+      fr++;
+      if (fr < 150) requestAnimationFrame(step); else cx.clearRect(0, 0, c.width, c.height);
+    })();
+  };
+
   /* ---------- storage (may be missing) ---------- */
   RT.get = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (_) { return d; } };
   RT.put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (_) { return false; } };
